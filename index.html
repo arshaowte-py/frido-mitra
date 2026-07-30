@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Frido Mitra — Engine OS</title>
+<meta name="description" content="Affiliate engine command dashboard for Frido Mitra: 9 macro engines across every affiliate channel.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#101319; --panel:#171B23; --panel2:#1D222C; --line:rgba(148,163,184,.14);
+  --text:#E7EAF0; --muted:#8B94A7; --faint:#5B6373;
+  --saffron:#F0A231; --jade:#34C388; --sky:#5AA7F0; --ember:#E5544B; --slate:#3A4150;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'Instrument Sans',system-ui,sans-serif;
+  --disp:'Bricolage Grotesque',var(--sans);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--saffron);outline-offset:2px;border-radius:4px}
+
+/* header */
+header{position:sticky;top:0;z-index:50;background:rgba(16,19,25,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.hwrap{max-width:1240px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;gap:2px;min-width:180px}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;color:var(--saffron)}
+.brand h1{font-family:var(--disp);font-weight:700;font-size:22px;letter-spacing:.01em;line-height:1}
+nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+nav button{padding:7px 14px;border-radius:8px;font-size:13.5px;font-weight:500;color:var(--muted);border:1px solid transparent}
+nav button:hover{color:var(--text);background:var(--panel)}
+nav button.on{color:var(--ink);background:var(--saffron);font-weight:600}
+.ver{font-family:var(--mono);font-size:11px;color:var(--faint);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+
+main{max-width:1240px;margin:0 auto;padding:28px 24px 80px}
+.view{display:none}
+.view.on{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+h2{font-family:var(--disp);font-weight:600;font-size:26px;margin-bottom:4px}
+.sub{color:var(--muted);font-size:14px;margin-bottom:22px}
+.sect{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--faint);margin:30px 0 12px;text-transform:uppercase}
+
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:8px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.kpi .n{font-family:var(--disp);font-weight:700;font-size:26px;line-height:1.1}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:2px}
+.kpi.mark .n{font-size:15px;font-family:var(--mono);font-weight:500;line-height:1.5}
+
+/* engine lines (signature) */
+.lines{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:6px 0;overflow-x:auto}
+.linehead,.linerow{display:grid;grid-template-columns:210px repeat(9,minmax(52px,1fr));align-items:center;gap:0;min-width:760px;padding:0 14px}
+.linehead{padding-top:10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.linehead .eh{font-family:var(--mono);font-size:10.5px;color:var(--faint);text-align:center;letter-spacing:.08em}
+.linerow{padding-top:9px;padding-bottom:9px;border-bottom:1px solid rgba(148,163,184,.06)}
+.linerow:last-child{border-bottom:0}
+.chname{display:flex;flex-direction:column;gap:1px;padding-right:12px}
+.chname .c{font-family:var(--mono);font-size:11px;color:var(--saffron)}
+.chname .c.g{color:var(--sky)}
+.chname .n{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stcell{display:flex;justify-content:center;position:relative}
+.stcell::before{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line);z-index:0}
+.linerow .stcell:first-of-type::before{left:50%}
+.linerow .stcell:last-of-type::before{right:50%}
+.station{position:relative;z-index:1;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11.5px;border:1px solid var(--line);background:var(--panel2);color:var(--faint);transition:transform .12s ease}
+.station:hover{transform:scale(1.14)}
+.station.empty{border-style:dashed;background:transparent}
+.station.s0{background:var(--slate);color:#C6CCD8;border-color:transparent}
+.station.s1{background:var(--saffron);color:#3A2504;border-color:transparent}
+.station.s2{background:var(--sky);color:#082A4A;border-color:transparent}
+.station.s3{background:var(--jade);color:#053622;border-color:transparent}
+.station .liv{position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:50%;background:var(--jade);border:2px solid var(--panel)}
+.station .gdot{position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--sky);opacity:.8}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.station.anim{animation:pop .3s ease backwards}
+
+/* legend */
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:4px;display:inline-block}
+
+/* chips + tags */
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
+.chip.st0{background:var(--slate);color:#C6CCD8}
+.chip.st1{background:rgba(240,162,49,.16);color:var(--saffron);border-color:rgba(240,162,49,.4)}
+.chip.st2{background:rgba(90,167,240,.14);color:var(--sky);border-color:rgba(90,167,240,.4)}
+.chip.st3{background:rgba(52,195,136,.14);color:var(--jade);border-color:rgba(52,195,136,.45)}
+.chip.click{cursor:pointer}
+.chip.click:hover{filter:brightness(1.2)}
+.chip .ldot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.9}
+.tag{font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:2px 7px;border-radius:5px}
+.tag.v0{background:rgba(90,167,240,.12);color:var(--sky)}
+.tag.draft{background:rgba(240,162,49,.12);color:var(--saffron)}
+.tag.glob{background:rgba(90,167,240,.1);color:var(--sky);border:1px dashed rgba(90,167,240,.4)}
+.sev{font-family:var(--mono);font-size:10.5px;padding:2px 8px;border-radius:5px}
+.sev.Blocker{background:rgba(229,84,75,.16);color:var(--ember)}
+.sev.Risk{background:rgba(240,162,49,.14);color:var(--saffron)}
+.sev.Watch{background:rgba(139,148,167,.14);color:var(--muted)}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:10px 12px;border-bottom:1px solid rgba(148,163,184,.07);vertical-align:top}
+.tbl tr:hover td{background:rgba(148,163,184,.04)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.scroll{overflow-x:auto}
+.mono{font-family:var(--mono)}
+.mut{color:var(--muted)}.fnt{color:var(--faint)}
+.indent1{padding-left:22px}.indent2{padding-left:44px}
+
+/* selector chips */
+.selrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.selrow button{font-family:var(--mono);font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid var(--line);color:var(--muted);background:var(--panel)}
+.selrow button:hover{color:var(--text)}
+.selrow button.on{background:var(--saffron);color:var(--ink);border-color:var(--saffron);font-weight:500}
+.selrow button.gsel.on{background:var(--sky)}
+
+/* cockpit */
+.eng{background:var(--panel);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;overflow:hidden}
+.eng>.eh2{display:flex;align-items:baseline;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--panel2)}
+.eng>.eh2 .eid{font-family:var(--mono);font-size:12px;color:var(--saffron)}
+.eng>.eh2 .enm{font-family:var(--disp);font-weight:600;font-size:16px}
+.eng>.eh2 .ecnt{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--faint)}
+.step{display:grid;grid-template-columns:34px 1fr auto;gap:4px 14px;padding:12px 16px;border-bottom:1px solid rgba(148,163,184,.06)}
+.step:last-child{border-bottom:0}
+.step .sq{font-family:var(--mono);font-size:11px;color:var(--faint);padding-top:2px}
+.step .nm{font-weight:500}
+.step .meta{grid-column:2;display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:2px}
+.step .meta b{color:var(--text);font-weight:500}
+.step .stop{grid-column:2;margin-top:4px;font-size:12.5px;color:var(--ember);display:flex;gap:8px;align-items:center}
+.step .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.gap{padding:14px 16px;color:var(--faint);font-size:13px}
+.gap b{color:var(--saffron);font-weight:500}
+
+/* lens */
+.lensrow{display:grid;grid-template-columns:200px 1fr 60px;gap:14px;align-items:center;padding:10px 16px;border-bottom:1px solid rgba(148,163,184,.07)}
+.lensrow:last-child{border-bottom:0}
+.bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--panel2);min-width:120px}
+.bar i{display:block;height:100%}
+.covergap{border:1px solid rgba(229,84,75,.35);background:rgba(229,84,75,.07);border-radius:12px;padding:12px 16px;font-size:13.5px;margin-bottom:16px}
+.coverok{border:1px solid rgba(52,195,136,.3);background:rgba(52,195,136,.06);border-radius:12px;padding:12px 16px;font-size:13.5px;margin-bottom:16px;color:var(--jade)}
+
+/* stopper feed */
+.feed .step{grid-template-columns:1fr auto}
+footer{border-top:1px solid var(--line);margin-top:40px;padding:20px 24px;max-width:1240px;margin-left:auto;margin-right:auto;font-size:12px;color:var(--faint);display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+footer button{color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:5px 12px;font-size:12px}
+footer button:hover{color:var(--text)}
+@media(max-width:720px){
+  .hwrap{padding:12px 16px;gap:12px}
+  main{padding:20px 14px 60px}
+  .linehead,.linerow{grid-template-columns:150px repeat(9,minmax(40px,1fr))}
+  .station{width:24px;height:24px;font-size:10px;border-radius:6px}
+  .lensrow{grid-template-columns:1fr;gap:8px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="hwrap">
+    <div class="brand">
+      <span class="eyebrow">FRIDO MITRA · AFFILIATE PROGRAM</span>
+      <h1>Engine OS</h1>
+    </div>
+    <nav id="nav" aria-label="Views">
+      <button data-v="dashboard">Dashboard</button>
+      <button data-v="registry">Registry</button>
+      <button data-v="cockpit">Cockpit</button>
+      <button data-v="lens">Lens</button>
+    </nav>
+    <span class="ver">v1.0 · seed</span>
+  </div>
+</header>
+
+<main>
+  <section class="view" id="v-dashboard"></section>
+  <section class="view" id="v-registry"></section>
+  <section class="view" id="v-cockpit"></section>
+  <section class="view" id="v-lens"></section>
+</main>
+
+<footer>
+  <span>System of record: Google Sheet (Engine OS design §2). This build: embedded seed v1 — rows tagged <span class="tag v0">V0</span> come from the master sheet; <span class="tag draft">DRAFT</span> rows need Sprint-1 confirmation.</span>
+  <span>Status clicks are saved in this browser only.</span>
+  <button id="resetBtn">Reset local status edits</button>
+</footer>
+
+<script>
+/* ---------------- data ---------------- */
+const STATUSES = ["Not started","In build","Testable","Live"];
+
+const ENGINES = [
+ {id:"E1",name:"Acquiring Affiliates",purpose:"Bring new affiliates into the funnel, organic + performance"},
+ {id:"E2",name:"Onboarding Affiliates",purpose:"RR application, approval, AM + category, access and trial"},
+ {id:"E3",name:"Engaging Affiliates",purpose:"Comms, hooks, trends and schemes that keep affiliates active"},
+ {id:"E4",name:"Publishing Content",purpose:"Affiliate-wise content tracking and CTA mechanics"},
+ {id:"E5",name:"PDP & CRO Engine",purpose:"Landing vs PDP testing plus aided-sales capture"},
+ {id:"E6",name:"Sales Engine",purpose:"Live channel-wise sales orchestration"},
+ {id:"E7",name:"Profitability Engine",purpose:"Channel-level CM2 from tagged Shopify orders"},
+ {id:"E8",name:"Payout Engine",purpose:"Refer Rush payment rails for affiliate payouts"},
+ {id:"E9",name:"Retention Engine",purpose:"Filter and retain proven sellers and content pushers"}
+];
+
+const CHANNELS = [
+ {id:"GLOBAL",parent:null,level:"AC",name:"Global · shared platform steps",leaf:true,global:true,status:"—"},
+ {id:"GT",parent:null,level:"AC",name:"GT Traders Across India",legacy:"L1",leaf:true,status:"POC pilot"},
+ {id:"SP",parent:null,level:"AC",name:"Specialists & Professionals",leaf:false,status:""},
+ {id:"SP-PHY",parent:"SP",level:"SAC",name:"Physiotherapists",legacy:"L2",leaf:true,status:"POC pilot"},
+ {id:"SP-ORT",parent:"SP",level:"SAC",name:"Orthopedic Doctors",legacy:"L2",leaf:true,status:"Ideation"},
+ {id:"SM",parent:null,level:"AC",name:"Social Media Creators",leaf:false,status:""},
+ {id:"SM-IG",parent:"SM",level:"SAC",name:"Instagram",leaf:false,status:""},
+ {id:"SM-IG-WL",parent:"SM-IG",level:"SSC",name:"Whitelisted Influencers",legacy:"L3",leaf:true,status:"POC pilot"},
+ {id:"SM-IG-NEW",parent:"SM-IG",level:"SSC",name:"New Creators (gunsblazing)",legacy:"L4",leaf:true,status:"Ideation"},
+ {id:"SM-YT",parent:"SM",level:"SAC",name:"YouTube",leaf:false,status:""},
+ {id:"SM-YT-LF",parent:"SM-YT",level:"SSC",name:"Long-Form Creators",leaf:true,status:"Ideation"},
+ {id:"SM-YT-SH",parent:"SM-YT",level:"SSC",name:"Shorts Creators",leaf:true,status:"Ideation"},
+ {id:"ST",parent:null,level:"AC",name:"Students · Campus Ambassadors",leaf:true,status:"Ideation"},
+ {id:"HH",parent:null,level:"AC",name:"Households · Word of Mouth",leaf:true,status:"Ideation"}
+];
+
+/* one row = one sub-engine for one leaf channel in one engine */
+const LEDGER = [
+ /* GLOBAL — from master sheet v0 */
+ {ch:"GLOBAL",eng:"E1",seq:1,name:"Affiliate page live; push on IG, WhatsApp, X, LinkedIn (Ganesh + company handles)",owner:"Unassigned",poc:"Existing social tools + Affiliate page",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E1",seq:2,name:"Performance ads to acquire affiliates",owner:"Unassigned",poc:"Ad platform (TBD)",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E1",seq:3,name:"Success-story content loop once first affiliates win",owner:"Unassigned",poc:"",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E2",seq:1,name:"RR application received, back-end admin approval",owner:"Unassigned",poc:"Refer Rush",scaled:"",data:"",stop:"RR feature velocity flagged as the open risk in v0",sev:"Watch",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E2",seq:2,name:"Affiliate Manager assignment",owner:"Unassigned",poc:"Refer Rush",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E2",seq:3,name:"Category prescription, registry code tagged (L1–L4 map)",owner:"Unassigned",poc:"Refer Rush",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E2",seq:4,name:"Auto-email: dashboard access + WhatsApp comms + Notion guide",owner:"Unassigned",poc:"RR + Gmail + Notion",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E3",seq:1,name:"WhatsApp community for global comms (Comfrt-Discord inspired)",owner:"Unassigned",poc:"WhatsApp",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E3",seq:2,name:"Share best-selling hooks per category",owner:"Unassigned",poc:"",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E3",seq:3,name:"Suggest sales trends and products to push",owner:"Unassigned",poc:"",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E3",seq:4,name:"Scheme: content-count based incentives",owner:"Unassigned",poc:"",scaled:"",data:"No. of contents per affiliate",stop:"Needs in-app content tracking live first (v0)",sev:"Risk",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E3",seq:5,name:"Scheme: sales-based incentives with in-app tracking",owner:"Unassigned",poc:"",scaled:"",data:"Sales generated per affiliate",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E4",seq:1,name:"Decide affiliate-wise content tracking: AMP vs RR",owner:"Unassigned",poc:"",scaled:"",data:"",stop:"Tracking mechanism undecided (v0: 'figure out a way')",sev:"Blocker",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E4",seq:2,name:"A/B: IG link-comment flow vs CTA via reels",owner:"Unassigned",poc:"",scaled:"",data:"Link-comment data vs reel CTA data",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E4",seq:3,name:"YouTube Shorts cross-post where product tagging is possible",owner:"Unassigned",poc:"",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E5",seq:1,name:"A/B: dedicated landing pages vs PDP",owner:"Unassigned",poc:"",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E5",seq:2,name:"WhatsApp lead-gen pop-ups (chat and call)",owner:"Unassigned",poc:"",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E5",seq:3,name:"Inbound abandoned-checkout flow",owner:"Unassigned",poc:"",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E5",seq:4,name:"Exit-intent pop-ups",owner:"Unassigned",poc:"",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E5",seq:5,name:"Abandoned-checkout retargeting scoped to affiliate UTMs",owner:"Unassigned",poc:"",scaled:"",data:"UTM-scoped abandonment",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E6",seq:1,name:"Live channel-wise sales dashboard (numbers and matrices)",owner:"Unassigned",poc:"",scaled:"",data:"Sales by channel, affiliate, product",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E7",seq:1,name:"Auto CM2 by channel: Shopify order tags into Frido Analytics",owner:"Unassigned",poc:"Shopify tags + Frido Analytics",scaled:"",data:"Channel-level CM2, day one",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E8",seq:1,name:"Validate RR payment rails, run via Sachin Mariwala — prerequisite",owner:"Sachin (RR)",poc:"Refer Rush payouts",scaled:"",data:"",stop:"v0: must be proven before scaling the whole exercise",sev:"Blocker",gtm:"Not started",src:"v0"},
+ {ch:"GLOBAL",eng:"E9",seq:1,name:"Filter high performers: sales pushers vs content pushers",owner:"Unassigned",poc:"",scaled:"",data:"Sales vs content contribution per affiliate",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ /* channel-specific — v0 */
+ {ch:"SP-PHY",eng:"E2",seq:1,name:"Product test and trial: order vs free-sample request for demo video",owner:"Unassigned",poc:"RR + logistics",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"SP-PHY",eng:"E2",seq:2,name:"Optional store-visit content session scheduling",owner:"Unassigned",poc:"Store Hub",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ {ch:"SM-IG-WL",eng:"E1",seq:1,name:"Not required by design — pre-acquired (v0: only L4 triggers E1)",owner:"—",poc:"",scaled:"",data:"",stop:"",sev:"",gtm:"Live",src:"v0"},
+ {ch:"SM-IG-NEW",eng:"E1",seq:1,name:"Full-funnel acquisition — L4 gunsblazing, E1 mandatory per v0",owner:"Unassigned",poc:"",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"v0"},
+ /* drafts — confirm in Sprint 1 */
+ {ch:"GT",eng:"E1",seq:1,name:"Trade-network outreach playbook for inventory-less selling",owner:"Unassigned",poc:"",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"draft"},
+ {ch:"GT",eng:"E2",seq:1,name:"Assortment catalogue walkthrough (full Frido range, inventory-less)",owner:"Unassigned",poc:"",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"draft"},
+ {ch:"SM-IG-NEW",eng:"E2",seq:1,name:"Sample-for-content offer at signup",owner:"Unassigned",poc:"",scaled:"",data:"",stop:"",sev:"",gtm:"Not started",src:"draft"}
+];
+
+/* ---------------- state ---------------- */
+const LSKEY="fm_gtm_v1";
+let overrides={};
+try{overrides=JSON.parse(localStorage.getItem(LSKEY)||"{}")}catch(e){overrides={}}
+function saveOv(){try{localStorage.setItem(LSKEY,JSON.stringify(overrides))}catch(e){}}
+function rowId(r){return r.ch+"-"+r.eng+"-"+String(r.seq).padStart(2,"0")}
+function eff(r){return overrides[rowId(r)]||r.gtm}
+function cycle(r){const i=STATUSES.indexOf(eff(r));overrides[rowId(r)]=STATUSES[(i+1)%STATUSES.length];saveOv();router()}
+
+/* ---------------- helpers ---------------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const leaves=CHANNELS.filter(c=>c.leaf);
+const realLeaves=leaves.filter(c=>!c.global);
+const chById=id=>CHANNELS.find(c=>c.id===id);
+const rowsFor=(ch,eng)=>LEDGER.filter(r=>r.ch===ch&&(!eng||r.eng===eng)).sort((a,b)=>a.eng===b.eng?a.seq-b.seq:a.eng<b.eng?-1:1);
+function counts(rows){const c={"Not started":0,"In build":0,"Testable":0,"Live":0};rows.forEach(r=>c[eff(r)]++);return c}
+function gtmPct(rows){if(!rows.length)return 0;const c=counts(rows);return Math.round(100*(c["Live"]*3+c["Testable"]*2+c["In build"])/(3*rows.length))}
+function stChipCls(s){return "st"+STATUSES.indexOf(s)}
+function statChip(r){const s=eff(r);const local=overrides[rowId(r)]&&overrides[rowId(r)]!==r.gtm;
+ return '<button class="chip click '+stChipCls(s)+'" data-cyc="'+rowId(r)+'" title="Click to cycle status (saved locally)">'+(local?'<span class="ldot"></span>':'')+esc(s)+'</button>'}
+function srcTag(r){return '<span class="tag '+(r.src==="v0"?"v0":"draft")+'">'+(r.src==="v0"?"V0":"DRAFT")+'</span>'}
+
+/* ---------------- views ---------------- */
+function vDashboard(){
+ const stoppers=LEDGER.filter(r=>r.stop);
+ const kpi=[
+  ["Affiliate channels", realLeaves.length+" leaves"],
+  ["Sub-engines defined", LEDGER.length],
+  ["Weighted GTM", gtmPct(LEDGER)+"%"],
+  ["Open show stoppers", stoppers.length]
+ ];
+ let h='<h2>Portfolio dashboard</h2><p class="sub">Every affiliate channel as a 9-station engine line — the sequential flow from acquisition to retention, at a glance.</p>';
+ h+='<div class="kpis">'+kpi.map(k=>'<div class="kpi"><div class="n">'+k[1]+'</div><div class="l">'+k[0]+'</div></div>').join('');
+ h+='<div class="kpi mark"><div class="n">500 · 500 · 500 recruits<br>6-month POC · 3-month payback</div><div class="l">POC markers (v0)</div></div></div>';
+ h+='<div class="sect">Engine lines · E1 → E9</div><div class="lines"><div class="linehead"><div></div>'+ENGINES.map(e=>'<div class="eh" title="'+esc(e.name)+'">'+e.id+'</div>').join('')+'</div>';
+ let ai=0;
+ leaves.forEach(c=>{
+  h+='<div class="linerow"><div class="chname"><span class="c'+(c.global?' g':'')+'">'+c.id+'</span><span class="n">'+esc(c.name)+'</span></div>';
+  ENGINES.forEach(e=>{
+   const rs=rowsFor(c.id,e.id);
+   const gShared=!c.global&&rowsFor("GLOBAL",e.id).length>0;
+   if(!rs.length){h+='<div class="stcell"><button class="station empty anim" style="animation-delay:'+(ai++*12)+'ms" data-go="cockpit/'+c.id+'/'+e.id+'" title="'+c.id+' · '+esc(e.name)+' — no channel-specific steps'+(gShared?' (GLOBAL covers shared steps)':'')+'">·'+ (gShared?'<span class="gdot"></span>':'') +'</button></div>';return}
+   const cc=counts(rs);let dom=0;let best=-1;
+   STATUSES.forEach((s,i)=>{if(cc[s]>best||(cc[s]===best&&i>dom)){best=cc[s];dom=cc[s]>0?i:dom}});
+   if(cc["Live"]===rs.length)dom=3;
+   h+='<div class="stcell"><button class="station s'+dom+' anim" style="animation-delay:'+(ai++*12)+'ms" data-go="cockpit/'+c.id+'/'+e.id+'" title="'+c.id+' · '+esc(e.name)+' — '+rs.length+' step(s), '+cc["Live"]+' live">'+rs.length+(cc["Live"]>0&&cc["Live"]<rs.length?'<span class="liv"></span>':'')+(gShared?'<span class="gdot"></span>':'')+'</button></div>';
+  });
+  h+='</div>';
+ });
+ h+='</div><div class="legend">'
+  +'<span><span class="sw" style="background:var(--slate)"></span>Not started</span>'
+  +'<span><span class="sw" style="background:var(--saffron)"></span>In build</span>'
+  +'<span><span class="sw" style="background:var(--sky)"></span>Testable</span>'
+  +'<span><span class="sw" style="background:var(--jade)"></span>Live</span>'
+  +'<span><span class="sw" style="border:1px dashed var(--line);background:transparent"></span>No steps yet</span>'
+  +'<span><span class="sw" style="background:var(--sky);width:6px;height:6px;border-radius:50%"></span>GLOBAL covers shared steps</span>'
+  +'<span>Click any station to open it in the Cockpit</span></div>';
+ h+='<div class="sect">Show stopper feed</div><div class="panel feed">';
+ if(!stoppers.length)h+='<div class="gap">No stoppers logged.</div>';
+ const order={Blocker:0,Risk:1,Watch:2};
+ stoppers.slice().sort((a,b)=>(order[a.sev]??3)-(order[b.sev]??3)).forEach(r=>{
+  h+='<div class="step"><div><div class="nm">'+esc(r.stop)+'</div><div class="meta"><span class="mono fnt">'+rowId(r)+'</span><span>'+esc(r.name)+'</span></div></div><div class="right"><span class="sev '+r.sev+'">'+r.sev+'</span></div></div>';
+ });
+ h+='</div>';
+ $("#v-dashboard").innerHTML=h;
+}
+
+function vRegistry(){
+ let h='<h2>Channel registry</h2><p class="sub">Master AC / SAC registry — owners, program status and rollups. Owners get assigned on Day 1–2 of the build plan.</p>';
+ h+='<div class="panel scroll"><table class="tbl"><thead><tr><th>Code</th><th>Channel</th><th>Level</th><th>Legacy</th><th>Owner / POC</th><th>Status</th><th>Steps</th><th>GTM</th><th>Stoppers</th></tr></thead><tbody>';
+ CHANNELS.forEach(c=>{
+  const rs=c.leaf?rowsFor(c.id):[];
+  const ind=c.level==="SAC"?"indent1":c.level==="SSC"?"indent2":"";
+  const st=c.leaf?LEDGER.filter(r=>r.ch===c.id&&r.stop).length:"";
+  h+='<tr><td class="mono" style="color:var(--saffron)">'+c.id+'</td>'
+   +'<td class="'+ind+'">'+esc(c.name)+(c.global?' <span class="tag glob">SHARED</span>':'')+'</td>'
+   +'<td class="mono fnt">'+c.level+'</td>'
+   +'<td class="mono fnt">'+(c.legacy||"—")+'</td>'
+   +'<td class="mut">'+(c.leaf?(c.global?"Engine leads":"Unassigned"):"—")+'</td>'
+   +'<td class="mut">'+(c.status||"—")+'</td>'
+   +'<td class="mono">'+(c.leaf?rs.length:"—")+'</td>'
+   +'<td class="mono">'+(c.leaf&&rs.length?gtmPct(rs)+"%":"—")+'</td>'
+   +'<td class="mono" style="color:'+(st>0?"var(--ember)":"var(--faint)")+'">'+(c.leaf?st:"—")+'</td></tr>';
+ });
+ h+='</tbody></table></div>';
+ $("#v-registry").innerHTML=h;
+}
+
+function vCockpit(sel){
+ sel=chById(sel)?sel:"SP-PHY";
+ let h='<h2>Channel cockpit</h2><p class="sub">One channel, end to end across all 9 engines. Shared GLOBAL machinery appears dashed so channel-specific work reads clearly.</p>';
+ h+='<div class="selrow">'+leaves.map(c=>'<button class="'+(c.id===sel?"on ":"")+(c.global?"gsel":"")+'" data-go="cockpit/'+c.id+'">'+c.id+'</button>').join('')+'</div>';
+ const c=chById(sel);
+ const own=rowsFor(sel);
+ h+='<div class="kpis"><div class="kpi"><div class="n">'+esc(c.name)+'</div><div class="l mono">'+c.id+(c.legacy?' · legacy '+c.legacy:'')+'</div></div>'
+  +'<div class="kpi"><div class="n">'+own.length+'</div><div class="l">Channel-specific steps</div></div>'
+  +'<div class="kpi"><div class="n">'+gtmPct(own)+'%</div><div class="l">Weighted GTM (own steps)</div></div>'
+  +'<div class="kpi"><div class="n">'+own.filter(r=>r.stop).length+'</div><div class="l">Stoppers on this channel</div></div></div>';
+ h+='<div style="height:10px"></div>';
+ ENGINES.forEach(e=>{
+  const mine=rowsFor(sel,e.id);
+  const glob=c.global?[]:rowsFor("GLOBAL",e.id);
+  h+='<div class="eng" id="eng-'+e.id+'"><div class="eh2"><span class="eid">'+e.id+'</span><span class="enm">'+esc(e.name)+'</span><span class="ecnt">'+mine.length+' own'+(glob.length?' · '+glob.length+' shared':'')+'</span></div>';
+  if(!mine.length&&!glob.length)h+='<div class="gap"><b>Coverage gap</b> — no steps defined for this engine yet.</div>';
+  mine.concat(glob).forEach(r=>{
+   const shared=r.ch==="GLOBAL"&&!c.global;
+   h+='<div class="step"'+(shared?' style="opacity:.72"':'')+'><div class="sq">'+String(r.seq).padStart(2,"0")+'</div>'
+    +'<div><div class="nm">'+esc(r.name)+(shared?' <span class="tag glob">GLOBAL</span>':'')+'</div>'
+    +'<div class="meta">'
+    +'<span><b>Owner</b> '+esc(r.owner)+'</span>'
+    +(r.poc?'<span><b>POC tool</b> '+esc(r.poc)+'</span>':'')
+    +(r.scaled?'<span><b>Scaled tool</b> '+esc(r.scaled)+'</span>':'')
+    +(r.data?'<span><b>Data</b> '+esc(r.data)+'</span>':'')
+    +'</div>'
+    +(r.stop?'<div class="stop"><span class="sev '+r.sev+'">'+r.sev+'</span>'+esc(r.stop)+'</div>':'')
+    +'</div><div class="right">'+statChip(r)+srcTag(r)+'</div></div>';
+  });
+  h+='</div>';
+ });
+ $("#v-cockpit").innerHTML=h;
+}
+
+function vLens(sel){
+ sel=ENGINES.some(e=>e.id===sel)?sel:"E1";
+ const e=ENGINES.find(x=>x.id===sel);
+ let h='<h2>Engine lens</h2><p class="sub">One engine compared across every channel — where it is defined, where it is live, and where the gaps are.</p>';
+ h+='<div class="selrow">'+ENGINES.map(x=>'<button class="'+(x.id===sel?"on":"")+'" data-go="lens/'+x.id+'" title="'+esc(x.name)+'">'+x.id+'</button>').join('')+'</div>';
+ h+='<div class="kpis"><div class="kpi"><div class="n">'+esc(e.name)+'</div><div class="l">'+esc(e.purpose)+'</div></div></div><div style="height:6px"></div>';
+ const missing=realLeaves.filter(c=>rowsFor(c.id,sel).length===0);
+ const globN=rowsFor("GLOBAL",sel).length;
+ if(missing.length)h+='<div class="covergap"><b style="color:var(--ember)">Coverage gaps:</b> '+missing.map(c=>c.id).join(", ")+' have no channel-specific steps for '+sel+(globN?' — GLOBAL covers '+globN+' shared step(s), confirm whether that is sufficient per channel.':'.')+'</div>';
+ else h+='<div class="coverok">All channels covered for '+sel+'.</div>';
+ h+='<div class="panel">';
+ leaves.forEach(c=>{
+  const rs=rowsFor(c.id,sel);
+  const cc=counts(rs);const tot=rs.length||1;
+  h+='<div class="lensrow"><div class="chname"><span class="c'+(c.global?" g":"")+'">'+c.id+'</span><span class="n mut">'+esc(c.name)+'</span></div>';
+  if(!rs.length){h+='<div class="fnt" style="font-size:12.5px">no steps</div><div></div></div>';return}
+  h+='<div class="bar" title="'+STATUSES.map(s=>s+": "+cc[s]).join(" · ")+'">'
+   +'<i style="width:'+(100*cc["Live"]/tot)+'%;background:var(--jade)"></i>'
+   +'<i style="width:'+(100*cc["Testable"]/tot)+'%;background:var(--sky)"></i>'
+   +'<i style="width:'+(100*cc["In build"]/tot)+'%;background:var(--saffron)"></i>'
+   +'</div><div class="mono" style="text-align:right">'+rs.length+'</div></div>';
+ });
+ h+='</div><div class="sect">All steps for '+sel+'</div><div class="panel">';
+ let any=false;
+ leaves.forEach(c=>{
+  rowsFor(c.id,sel).forEach(r=>{any=true;
+   h+='<div class="step" style="grid-template-columns:110px 1fr auto"><div class="mono" style="color:var(--saffron);font-size:11px;padding-top:3px">'+r.ch+'</div>'
+    +'<div><div class="nm">'+esc(r.name)+'</div><div class="meta"><span><b>Owner</b> '+esc(r.owner)+'</span>'+(r.poc?'<span><b>POC tool</b> '+esc(r.poc)+'</span>':'')+(r.data?'<span><b>Data</b> '+esc(r.data)+'</span>':'')+'</div>'
+    +(r.stop?'<div class="stop"><span class="sev '+r.sev+'">'+r.sev+'</span>'+esc(r.stop)+'</div>':'')
+    +'</div><div class="right">'+statChip(r)+srcTag(r)+'</div></div>';
+  });
+ });
+ if(!any)h+='<div class="gap">Nothing defined anywhere for this engine yet.</div>';
+ h+='</div>';
+ $("#v-lens").innerHTML=h;
+}
+
+/* ---------------- router ---------------- */
+function router(){
+ const parts=(location.hash.replace(/^#\/?/,"")||"dashboard").split("/");
+ const view=["dashboard","registry","cockpit","lens"].includes(parts[0])?parts[0]:"dashboard";
+ document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v===view));
+ document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));
+ $("#v-"+view).classList.add("on");
+ if(view==="dashboard")vDashboard();
+ if(view==="registry")vRegistry();
+ if(view==="cockpit")vCockpit(parts[1]);
+ if(view==="lens")vLens(parts[1]);
+ if(view==="cockpit"&&parts[2]){const el=document.getElementById("eng-"+parts[2]);if(el)setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"start"}),60)}
+}
+document.addEventListener("click",ev=>{
+ const go=ev.target.closest("[data-go]");
+ if(go){location.hash="#/"+go.dataset.go;return}
+ const nv=ev.target.closest("nav button");
+ if(nv){location.hash="#/"+nv.dataset.v;return}
+ const cyc=ev.target.closest("[data-cyc]");
+ if(cyc){const r=LEDGER.find(x=>rowId(x)===cyc.dataset.cyc);if(r)cycle(r)}
+});
+$("#resetBtn").addEventListener("click",()=>{overrides={};saveOv();router()});
+window.addEventListener("hashchange",router);
+router();
+</script>
+</body>
+</html>
