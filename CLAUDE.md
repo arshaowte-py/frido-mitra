@@ -22,11 +22,27 @@ Views (hash-routed, all rendered from embedded data):
 - Quality floor: responsive to mobile, `:focus-visible` outlines, `prefers-reduced-motion` respected. Preserve these in every change.
 
 ## Deploy (Netlify)
-- Production site (already created): **frido-mitra-engine-os.netlify.app**
-- Site ID: `dbd4da4a-0c66-419b-abe6-6b29e79f2f34`
-- One-time: `netlify link --id dbd4da4a-0c66-419b-abe6-6b29e79f2f34`
-- Ship: `netlify deploy --prod` (publish dir `.` per `netlify.toml`)
-- Preferred CI/CD once a GitHub repo exists: push branch → Netlify deploy preview → Abdal reviews preview URL → merge to main = production.
+- Production site: **frido-mitra-engine-os.netlify.app**
+- Site ID: `cd2203a6-e56e-4c25-a01a-50e808e2bbc1` · team `saiyedabdal` · [admin](https://app.netlify.com/projects/frido-mitra-engine-os)
+- GitHub repo: `arshaowte-py/frido-mitra`
+- One-time: `netlify link --id cd2203a6-e56e-4c25-a01a-50e808e2bbc1`
+- Manual ship: `netlify deploy --prod` (publish dir `.` per `netlify.toml`, no build step)
+
+### Push-to-deploy (preferred)
+Once the repo is connected in the Netlify UI (Site configuration → Build & deploy → Link repository), the pipeline is:
+- push to `main` → **production** deploy
+- push any other branch → **branch deploy** at `<branch>--frido-mitra-engine-os.netlify.app`
+- open a PR → **deploy preview** at `deploy-preview-<n>--frido-mitra-engine-os.netlify.app`
+
+Netlify reads `netlify.toml` from the repo, so build settings are version-controlled — don't set publish dir or redirects in the UI, they'll be overridden.
+
+**Caveat:** the Netlify account authenticates via GitHub as `saiyedabdal`, but the repo lives under the `arshaowte-py` org. The Netlify GitHub App must be installed on that org (and granted access to `frido-mitra`) before the repo appears in the link picker.
+
+### Pages
+| Path | File | Audience |
+|---|---|---|
+| `/` | `index.html` | Internal — Engine OS ops dashboard |
+| `/ambassador`, `/handbook`, `/mitra` | `ambassador.html` | External — affiliate-facing handbook |
 
 ## Operating rule
 **Never deploy to production without Abdal's explicit approval of a change summary.** Deploy previews / local serves are fine without approval; production is not.
@@ -34,7 +50,8 @@ Views (hash-routed, all rendered from embedded data):
 ## Roadmap (v1.1+ candidates, in rough order)
 1. Live data: replace embedded seed with a fetch from a Google Apps Script `doGet` JSON endpoint on the master Sheet (keep embedded seed as offline fallback).
 2. Owner assignment pass once Day 1–2 owner mapping lands (registry + ledger `owner` fields are mostly "Unassigned" by design right now).
-3. GitHub repo + Netlify auto-deploy (true PR-gated pipeline).
+3. ~~GitHub repo + Netlify auto-deploy~~ — repo live at `arshaowte-py/frido-mitra`; `netlify.toml` is deploy-ready, pending the GitHub App install on the org (see Deploy).
+5. Ambassador handbook (`ambassador.html`) blocking decisions: commission rate, customer discount, payout holding period, sample policy. All four are marked TBC/DRAFT in-page.
 4. METRICS layer per design doc Phase 2: RR actuals (affiliates, links, CTA clicks, conversions) feeding the Dashboard; later BigQuery `frido-429506` CM2 for E7.
 
 ## Context docs
