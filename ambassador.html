@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Frido Mitra — Ambassador Handbook</title>
+<meta name="description" content="The Frido Mitra ambassador handbook: how you earn, how you get paid, how to film, and how the community works.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#101319; --panel:#171B23; --panel2:#1D222C; --line:rgba(148,163,184,.14);
+  --text:#E7EAF0; --muted:#8B94A7; --faint:#5B6373;
+  --saffron:#F0A231; --jade:#34C388; --sky:#5AA7F0; --ember:#E5544B; --slate:#3A4150;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'Instrument Sans',system-ui,sans-serif;
+  --disp:'Bricolage Grotesque',var(--sans);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--saffron);text-decoration:none;border-bottom:1px solid rgba(240,162,49,.35)}
+a:hover{border-bottom-color:var(--saffron)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--saffron);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto}}
+
+/* header */
+header{position:sticky;top:0;z-index:50;background:rgba(16,19,25,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.hwrap{max-width:900px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;gap:2px}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;color:var(--saffron)}
+.brand h1{font-family:var(--disp);font-weight:700;font-size:21px;letter-spacing:.01em;line-height:1}
+.ver{font-family:var(--mono);font-size:11px;color:var(--faint);border:1px solid var(--line);border-radius:999px;padding:3px 10px;margin-left:auto}
+
+/* contents rail */
+.toc{max-width:900px;margin:0 auto;padding:0 24px}
+.toc ol{display:flex;gap:6px;flex-wrap:wrap;list-style:none;padding:16px 0 0}
+.toc a{font-family:var(--mono);font-size:11.5px;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:5px 11px;display:inline-block;background:var(--panel)}
+.toc a:hover{color:var(--text);border-color:rgba(240,162,49,.4)}
+
+main{max-width:900px;margin:0 auto;padding:22px 24px 70px}
+
+h2{font-family:var(--disp);font-weight:600;font-size:24px;margin-bottom:4px;scroll-margin-top:84px}
+h3{font-family:var(--disp);font-weight:600;font-size:16px;margin-bottom:6px}
+.sect{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--faint);margin:38px 0 12px;text-transform:uppercase}
+.sub{color:var(--muted);font-size:14px;margin-bottom:18px}
+p{margin-bottom:12px}
+p:last-child{margin-bottom:0}
+
+/* aside callouts */
+.aside{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--saffron);border-radius:12px;padding:18px 20px;margin:16px 0}
+.aside.tip{border-left-color:var(--sky)}
+.aside.good{border-left-color:var(--jade)}
+.aside.warn{border-left-color:var(--ember)}
+.aside .ah{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+.aside.warn .ah{color:var(--ember)}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+
+/* earn cards */
+.earn{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:14px 0}
+.earn .c{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.earn .n{font-family:var(--disp);font-weight:700;font-size:30px;line-height:1.1;color:var(--saffron)}
+.earn .n.tbc{font-family:var(--mono);font-size:19px;color:var(--faint)}
+.earn .l{font-size:13px;color:var(--muted);margin-top:4px}
+
+/* steps */
+ol.steps{list-style:none;counter-reset:s;margin:6px 0}
+ol.steps>li{counter-increment:s;position:relative;padding-left:38px;margin-bottom:14px}
+ol.steps>li::before{content:counter(s);position:absolute;left:0;top:1px;width:24px;height:24px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);font-family:var(--mono);font-size:11.5px;color:var(--saffron);display:flex;align-items:center;justify-content:center}
+ul.bul{list-style:none;margin:6px 0}
+ul.bul li{position:relative;padding-left:20px;margin-bottom:8px}
+ul.bul li::before{content:'';position:absolute;left:6px;top:10px;width:5px;height:5px;border-radius:50%;background:var(--faint)}
+ul.bul.yes li::before{background:var(--jade)}
+ul.bul.no li::before{background:var(--ember)}
+
+/* tags */
+.tag{font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:2px 7px;border-radius:5px;white-space:nowrap;display:inline-block;vertical-align:middle}
+.tag.v0{background:rgba(90,167,240,.12);color:var(--sky)}
+.tag.draft{background:rgba(240,162,49,.12);color:var(--saffron)}
+.tag.tbc{background:rgba(139,148,167,.14);color:var(--muted);border:1px dashed rgba(139,148,167,.4)}
+.mono{font-family:var(--mono)}
+.mut{color:var(--muted)}
+code{font-family:var(--mono);font-size:12.5px;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--text)}
+
+/* tables */
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px;min-width:520px}
+.tbl th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+.tbl td{padding:10px 12px;border-bottom:1px solid rgba(148,163,184,.07);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+
+/* faq */
+details{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
+details summary{padding:13px 18px;cursor:pointer;font-weight:500;list-style:none;display:flex;align-items:center;gap:10px}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:'+';font-family:var(--mono);color:var(--saffron);font-size:15px;flex-shrink:0}
+details[open] summary::before{content:'–'}
+details summary:hover{background:var(--panel2)}
+details .body{padding:0 18px 15px 40px;color:var(--muted);font-size:14px}
+details .body p{margin-bottom:10px}
+
+footer{border-top:1px solid var(--line);margin-top:44px;padding:22px 24px 40px;max-width:900px;margin-left:auto;margin-right:auto;font-size:12.5px;color:var(--faint)}
+footer p{margin-bottom:8px}
+
+@media(max-width:720px){
+  .hwrap{padding:12px 16px;gap:10px}
+  .toc{padding:0 14px}
+  main{padding:18px 14px 56px}
+  h2{font-size:21px}
+  .ver{margin-left:0}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hwrap">
+    <div class="brand">
+      <span class="eyebrow">FRIDO MITRA · AFFILIATE PROGRAM</span>
+      <h1>Ambassador Handbook</h1>
+    </div>
+    <span class="ver">v0.1 · draft</span>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <ol>
+    <li><a href="#start">Start here</a></li>
+    <li><a href="#earn">How you earn</a></li>
+    <li><a href="#portal">Your portal</a></li>
+    <li><a href="#paid">Getting paid</a></li>
+    <li><a href="#samples">Product samples</a></li>
+    <li><a href="#brand">Brand guidelines</a></li>
+    <li><a href="#filming">Filming</a></li>
+    <li><a href="#community">Community</a></li>
+    <li><a href="#rules">Ground rules</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ol>
+</nav>
+
+<main>
+
+  <div class="aside">
+    <div class="ah">Welcome</div>
+    <p><b>Welcome to Frido Mitra.</b></p>
+    <p>You've joined a network of people who help Indians move better and hurt less — traders, physiotherapists, doctors, creators and students who put Frido in front of the people who need it most.</p>
+    <p>Being a Mitra isn't only about selling. It's about your voice, your audience and your credibility. We give you the products, the payouts and the playbook — you make it your own.</p>
+    <p class="mut">Glad to have you with us.</p>
+  </div>
+
+  <!-- ============ START HERE ============ -->
+  <div class="sect">01 — Onboarding</div>
+  <h2 id="start">Start here</h2>
+  <p class="sub">Four things to do in your first week. None of them take long.</p>
+
+  <div class="panel">
+    <ol class="steps">
+      <li><b>Log in to your Refer Rush dashboard.</b> The welcome email we sent on approval has your access link. Inside you'll find your coupon code and your referral link, both generated for you automatically.</li>
+      <li><b>Add your payout details.</b> PAN and bank account — see <a href="#paid">Getting paid</a>. Do this before your first sale so nothing is held up later.</li>
+      <li><b>Meet your Affiliate Manager.</b> Every Mitra is assigned an AM and a category when approved. Your AM is your single point of contact for hooks, product picks and anything that goes wrong.</li>
+      <li><b>Join the WhatsApp community.</b> The invite is in your welcome email. See <a href="#community">Community</a>.</li>
+    </ol>
+  </div>
+
+  <div class="aside tip">
+    <div class="ah">Your category</div>
+    <p>When your application was approved, you were tagged into a category — GT trader, physiotherapist or doctor, established creator, or new creator. Your category decides which products get recommended to you, which hooks your AM sends, and which schemes you're eligible for.</p>
+    <p class="mut">If you think you're in the wrong category, tell your AM. It can be changed.</p>
+  </div>
+
+  <!-- ============ HOW YOU EARN ============ -->
+  <div class="sect">02 — Economics</div>
+  <h2 id="earn">How you earn</h2>
+  <p class="sub">You have a coupon code and a referral link. Both are yours, both are tracked.</p>
+
+  <div class="earn">
+    <div class="c">
+      <div class="n tbc">TBC</div>
+      <div class="l">Your commission on each sale <span class="tag tbc">DRAFT</span></div>
+    </div>
+    <div class="c">
+      <div class="n tbc">TBC</div>
+      <div class="l">Discount your customer gets <span class="tag tbc">DRAFT</span></div>
+    </div>
+  </div>
+
+  <div class="aside warn">
+    <div class="ah">Not yet confirmed — do not publish</div>
+    <p>Frido's commission rate and customer discount are <b>not settled</b>. The whiteboard session recorded <code>20%</code>, <code>15%</code> and <code>2nd — net</code> in the margin, but the decode sheet explicitly flags these as <i>"possibly commission slabs, meanings not stated"</i> — it is Open Question #1 and still unanswered.</p>
+    <p>These two numbers, plus whether the rate is flat or slabbed by channel, need Abdal's sign-off before this page goes live. Everything else on this page is structurally ready.</p>
+  </div>
+
+  <p>Refer Rush supports a <b>global default</b> for both numbers plus a <b>per-Mitra override</b>, and each can be set as a percentage or a fixed rupee amount. That means the program can run one headline rate for everyone while still treating a high-volume GT trader differently from a first-time creator — without rebuilding anything.</p>
+
+  <div class="scroll">
+    <table class="tbl">
+      <thead><tr><th>What</th><th>Where it lives</th><th>Set by</th></tr></thead>
+      <tbody>
+        <tr><td>Your coupon code</td><td>Auto-generated from your name at approval</td><td>Frido, per Mitra</td></tr>
+        <tr><td>Your referral link</td><td>Your Refer Rush dashboard — copy it into your bio</td><td>Frido, per Mitra</td></tr>
+        <tr><td>Customer discount</td><td>Attached to your code <span class="tag tbc">TBC</span></td><td>Global default, overridable</td></tr>
+        <tr><td>Your commission</td><td>Credited to your ledger on each valid order <span class="tag tbc">TBC</span></td><td>Global default, overridable</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============ PORTAL ============ -->
+  <div class="sect">03 — Your dashboard</div>
+  <h2 id="portal">Your portal</h2>
+  <p class="sub">Everything about your performance lives in one place.</p>
+
+  <div class="panel">
+    <ul class="bul">
+      <li><b>Your code and link</b> — copy either with one tap.</li>
+      <li><b>Your orders</b> — every order placed on your code, with its current state. If an order was cancelled or returned, you'll see that here, which is usually the answer to "why wasn't I paid for this sale?"</li>
+      <li><b>Ready to claim</b> — commission that has matured and can be withdrawn now.</li>
+      <li><b>Maturing</b> — commission earned but still inside the holding window.</li>
+      <li><b>Lifetime earnings</b> — everything you've made with Frido.</li>
+      <li><b>Payment history</b> — every payout, with its status.</li>
+    </ul>
+  </div>
+
+  <div class="aside tip">
+    <div class="ah">Coming later</div>
+    <p>Deeper analytics — which code is converting, your revenue trend, your best days to post, and your top-selling SKUs by revenue and units — are on the Refer Rush roadmap rather than live today. Your AM can pull these numbers for you in the meantime.</p>
+  </div>
+
+  <!-- ============ GETTING PAID ============ -->
+  <div class="sect">04 — Payouts</div>
+  <h2 id="paid">Getting paid</h2>
+  <p class="sub">Straight to your UPI. Fully compliant, with your tax paperwork handled.</p>
+
+  <h3>Setting up</h3>
+  <p>We deliberately <b>do not</b> ask for PAN and bank details at signup — that's friction before you've earned anything. You add them when you make your first withdrawal.</p>
+
+  <div class="panel">
+    <ol class="steps">
+      <li><b>Request your payout</b> from the wallet section of your dashboard once you have a claimable balance.</li>
+      <li><b>Enter your PAN.</b> It's verified in real time and we pull your registered name and address from it.</li>
+      <li><b>Add your bank account.</b> Your name on the PAN is matched against the name on the bank account.</li>
+      <li><b>Receive the money</b> on your UPI ID.</li>
+    </ol>
+  </div>
+
+  <div class="aside warn">
+    <div class="ah">The name on the account must be yours</div>
+    <p>Your PAN, your bank account and your UPI must all belong to <b>you</b>. If you submit a parent's, spouse's or friend's PAN or account, the name-match check will fail and the payout will not go through.</p>
+    <p>This isn't bureaucracy for its own sake — paying one person against another person's PAN is non-compliant for Frido and creates a tax problem for you. The check exists to protect both of us from fraud.</p>
+  </div>
+
+  <h3>Holding period</h3>
+  <p>Commission doesn't become claimable the instant an order is placed. It sits in <b>maturing</b> first, so the order can be delivered and the return window can close. You'll see the maturing balance and the claimable balance separately in your dashboard.</p>
+  <p class="mut"><span class="tag tbc">TBC</span> The exact holding period for Frido Mitra is not yet fixed. For reference, comparable programs commonly run 30–60 day net terms; Frido's number should be set against actual return and RTO windows rather than copied.</p>
+
+  <h3>Tax — handled for you</h3>
+  <p>TDS is deducted and tracked automatically, and you get a <b>Form 16A</b> for it. You'll receive periodic email reminders showing exactly what has been deducted, so you can download it and file without chasing anyone.</p>
+  <p>You do not need to reconcile anything by hand. This is one of the main reasons Frido chose this payout stack.</p>
+
+  <!-- ============ SAMPLES ============ -->
+  <div class="sect">05 — Product</div>
+  <h2 id="samples">Product samples</h2>
+  <p class="sub">You can't make honest content about a product you've never worn.</p>
+
+  <p>Request the product you want to feature from your dashboard. When your AM approves it, an order is raised and shipped to your address automatically — no forms, no follow-up.</p>
+
+  <div class="scroll">
+    <table class="tbl">
+      <thead><tr><th>Route</th><th>How it works</th></tr></thead>
+      <tbody>
+        <tr><td><b>Request a sample</b></td><td>Pick the product, submit, wait for AM approval. Ships to you directly.</td></tr>
+        <tr><td><b>Buy it yourself</b></td><td>Order normally — on your own code, so you earn on it too.</td></tr>
+        <tr><td><b>Visit a store</b> <span class="tag draft">DRAFT</span></td><td>Shoot at a Frido experience store with product and staff on hand. Ask your AM to schedule it.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="mut"><span class="tag tbc">TBC</span> Whether samples are free, discounted, or free above a performance threshold is a setting Frido controls globally — the policy hasn't been fixed yet. Your AM will tell you what applies to your category.</p>
+
+  <!-- ============ BRAND ============ -->
+  <div class="sect">06 — Guidelines</div>
+  <h2 id="brand">Brand guidelines</h2>
+  <p class="sub">Frido sells comfort and pain relief. That places real limits on what we can claim.</p>
+
+  <div class="grid2">
+    <div class="panel">
+      <h3 style="color:var(--jade)">Do</h3>
+      <ul class="bul yes">
+        <li>Talk about your own experience, honestly.</li>
+        <li>Show the product in real use — walking, sitting, working, sleeping.</li>
+        <li>Be specific about which problem it solves.</li>
+        <li>Say clearly that it's a paid or affiliate partnership.</li>
+        <li>Use the assets and hooks your AM shares.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3 style="color:var(--ember)">Don't</h3>
+      <ul class="bul no">
+        <li>Promise that Frido cures, treats or prevents any medical condition.</li>
+        <li>Invent results, timelines or statistics.</li>
+        <li>Disparage other brands by name.</li>
+        <li>Alter Frido's logo, packaging or product photography.</li>
+        <li>Quote prices or discounts that aren't currently live.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="aside warn">
+    <div class="ah">If you are a healthcare professional</div>
+    <p>Physiotherapists and doctors carry a higher bar than creators. Recommend Frido as a comfort or support product — never as a treatment, and never as a substitute for clinical care. Follow your own professional body's rules on endorsement; they override anything on this page.</p>
+  </div>
+
+  <!-- ============ FILMING ============ -->
+  <div class="sect">07 — Content</div>
+  <h2 id="filming">Filming</h2>
+  <p class="sub">Read this before you shoot, not after.</p>
+
+  <h3>Before you film</h3>
+  <ul class="bul">
+    <li><b>Check the product is still live.</b> Ask your AM for the current discontinued list — nothing wastes a good video like promoting something that's out of stock.</li>
+    <li><b>Pick your category first,</b> then the product, then the hook. Your AM sends the hooks that are working this week.</li>
+    <li><b>Shoot vertical,</b> in good light, with clean audio.</li>
+    <li><b>Show the product doing its job.</b> Static shots don't convert.</li>
+  </ul>
+
+  <h3>Getting the click</h3>
+  <p>Your link belongs in your bio and your code belongs in the video and the caption. Say the code out loud — people remember what they hear.</p>
+  <p class="mut"><span class="tag tbc">TBC</span> Whether Instagram link-in-comment or an in-reel CTA performs better for Frido is an open A/B test <span class="tag v0">V0</span>, as is whether to cross-post to YouTube Shorts for product tagging. Your AM will share results as they land.</p>
+
+  <div class="aside good">
+    <div class="ah">The flow</div>
+    <p>Pick your category → check the product is live → get the current hook from your AM → film using the rules above → post with your code and link → tell your AM it's up.</p>
+  </div>
+
+  <!-- ============ COMMUNITY ============ -->
+  <div class="sect">08 — Community</div>
+  <h2 id="community">Community</h2>
+  <p class="sub">The part that actually compounds.</p>
+
+  <p>Frido Mitra runs on <b>WhatsApp</b>, not Discord or Slack — because that's where Indian traders, physios and creators already are. You'll be added to a community group on approval and, depending on your category, a smaller group with your AM.</p>
+
+  <div class="panel">
+    <h3>What comes through the community</h3>
+    <ul class="bul">
+      <li>New launches, with the promotion and education angle for each.</li>
+      <li>The best-performing Mitra videos of the past week, and why they worked.</li>
+      <li>Selling hooks by category.</li>
+      <li>What's trending and what to push right now.</li>
+      <li>Scheme announcements — both content-based and sales-based.</li>
+    </ul>
+  </div>
+
+  <div class="aside">
+    <div class="ah">Weekly Mitra call <span class="tag draft">DRAFT</span></div>
+    <p>A weekly 30-minute call covering new launches, a breakdown of the top-performing content of the last seven days, and open Q&amp;A on making content that sells.</p>
+    <p class="mut">Day, time and joining link are not yet fixed. Attendance is strongly encouraged — the Mitras who show up are consistently the ones who earn most.</p>
+    <p class="mut">This call is for content and selling. Order issues, payout problems and account setup go to your AM, not the call.</p>
+  </div>
+
+  <!-- ============ RULES ============ -->
+  <div class="sect">09 — Ground rules</div>
+  <h2 id="rules">Ground rules</h2>
+  <p class="sub">Short list. Breaking these costs you your code and your unpaid commission.</p>
+
+  <div class="panel">
+    <ul class="bul no">
+      <li><b>Don't post your code on coupon or deal-sharing sites.</b> Not on deal forums, not on coupon aggregators, not on Reddit. Codes leak from those places and get used by people who were never your audience — which drains your commission and Frido's margin at once.</li>
+      <li><b>Don't drop your code on another creator's content.</b> You're taking a sale someone else earned. This is the fastest way to lose your code.</li>
+      <li><b>One Mitra, one code.</b> Applying for a second code under another name or number is grounds for immediate removal.</li>
+      <li><b>Don't run paid ads on Frido's brand terms</b> without written permission from your AM. You'd be bidding against Frido's own spend.</li>
+      <li><b>Share your code with your audience</b> — social platforms, your clinic, your shop, your campus. That's the whole point.</li>
+    </ul>
+  </div>
+
+  <div class="aside warn">
+    <div class="ah">Consequence</div>
+    <p>Breaching these guidelines results in your code being deactivated and any unpaid commission forfeited. Where the breach is honest and one-off, your AM will talk to you first — but leaked codes get shut down immediately, because every hour they stay live costs money.</p>
+  </div>
+
+  <!-- ============ FAQ ============ -->
+  <div class="sect">10 — Questions</div>
+  <h2 id="faq">FAQ</h2>
+
+  <details>
+    <summary>Does my customer have to use my link, or is my code enough?</summary>
+    <div class="body">
+      <p>Both your code and your link are tracked, and orders placed on your code appear in your dashboard.</p>
+      <p><span class="tag tbc">TBC</span> Exactly how attribution resolves when someone types your code without clicking your link — and what the cookie window is — needs confirming with Refer Rush before this page is published. Don't guess at it with your audience; ask your AM.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>I made a sale but I haven't been paid for it.</summary>
+    <div class="body">
+      <p>Open your orders list. The usual reasons are that the order was cancelled or returned, or that the commission is still maturing. Both states are shown against the order.</p>
+      <p>If the order shows as delivered and matured and you still haven't been paid, message your AM.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>My customer got a "usage limit reached" error on my code.</summary>
+    <div class="body">
+      <p>Usually this means the code has been shared beyond your own audience and hit its cap — see <a href="#rules">Ground rules</a>. Tell your AM straight away rather than waiting; if it has leaked, the sooner it's rotated the less you lose.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Do I need a PAN card?</summary>
+    <div class="body">
+      <p>Yes, to withdraw. You can join, promote and earn without one, but the money can't leave the platform until PAN and a matching bank account are verified.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Can I use a family member's bank account?</summary>
+    <div class="body">
+      <p>No. The name on your PAN and the name on your bank account must match. Payouts against someone else's account fail the check and won't be released.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Can I be a Mitra for another brand at the same time?</summary>
+    <div class="body">
+      <p>Yes, unless you've signed something specific with Frido that says otherwise. What you can't do is promote a directly competing product inside the same piece of content as Frido.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Who do I contact when something goes wrong?</summary>
+    <div class="body">
+      <p>Your Affiliate Manager, first and always. They were assigned to you at approval and their contact is in your welcome email. Payouts, orders, samples, category changes and code problems all go through them.</p>
+    </div>
+  </details>
+
+</main>
+
+<footer>
+  <p><b>Draft — not for circulation.</b> This handbook is modelled on the structure of the Comfrt Ambassador Program and adapted to Frido's stack: Refer Rush in place of Growi, WhatsApp community in place of Discord, and Indian payout and tax compliance in place of PayPal/Stripe.</p>
+  <p>Items marked <span class="tag tbc">TBC</span> or <span class="tag draft">DRAFT</span> are not yet decided and must not be communicated to affiliates until confirmed. <span class="tag v0">V0</span> marks content carried from the master sheet. Commission rate, customer discount, holding period and sample policy are the four blocking decisions.</p>
+  <p>Operating model and delivery status for the program itself live in the <a href="./index.html">Engine OS dashboard</a>.</p>
+</footer>
+
+</body>
+</html>
