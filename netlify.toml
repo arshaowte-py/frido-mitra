@@ -1,2 +1,36 @@
 [build]
   publish = "."
+  # Static site, no build step. Netlify serves the repo root as-is.
+  command = ""
+
+# Deploy previews and branch deploys use the same settings as production.
+[context.deploy-preview]
+  publish = "."
+
+[context.branch-deploy]
+  publish = "."
+
+# Pretty URLs for the ambassador handbook.
+[[redirects]]
+  from = "/handbook"
+  to = "/ambassador.html"
+  status = 200
+
+[[redirects]]
+  from = "/mitra"
+  to = "/ambassador.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), camera=(), microphone=()"
+
+# HTML is revalidated every request so a push is visible immediately.
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
