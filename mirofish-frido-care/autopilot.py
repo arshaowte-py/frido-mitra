@@ -1,7 +1,10 @@
 """Run a prepared MiroFish simulation to a finished report, unattended.
 
 Usage (on the Mac, with `npm run dev` already running in another window):
-    caffeinate -dimsu ~/MiroFish/backend/.venv/bin/python ~/Downloads/autopilot.py sim_xxxxxxxx [rounds]
+    caffeinate -dimsu ~/MiroFish/backend/.venv/bin/python ~/Downloads/autopilot.py sim_xxxxxxxx [rounds] [survey]
+
+Add the word `survey` to interview every agent with the Frido Care questions before the run closes
+(saved to ~/MiroFish-reports/<sim_id>-survey.md).
 
 It waits for environment setup to finish, starts the simulation, waits for it to
 complete, generates the report and saves it to ~/MiroFish-reports/<sim_id>.md.
@@ -17,19 +20,32 @@ API = "http://localhost:5001/api"
 SIM = sys.argv[1] if len(sys.argv) > 1 else ""
 ROUNDS = int(sys.argv[2]) if len(sys.argv) > 2 else 5
 OUT_DIR = os.path.expanduser("~/MiroFish-reports")
+SURVEY = "survey" in sys.argv[3:]
+
+# Asked to every agent (one platform) after the last round, before the environment closes.
+SURVEY_QUESTIONS = [
+    "In your own words and from your own situation: what do you honestly think of Frido Care, the app where a "
+    "physiotherapist assesses you and prescribes Frido products, services and exercises? Does it feel like genuine "
+    "care or like a sales pitch, and why?",
+    "The patient pays a consultation fee of about Rs 800-1,000, refunded if they then buy Frido products above a set "
+    "amount. Does that feel fair, helpful, or like pressure to buy? What would you do?",
+    "Would you use, buy from, recommend or partner with Frido Care in the next month? Answer yes, no or maybe, then "
+    "give the single most important reason.",
+    "What is your biggest worry or objection about Frido Care, and what one change would remove it?",
+]
 
 
 def log(msg):
     print(time.strftime("%H:%M:%S"), msg, flush=True)
 
 
-def call(method, path, body=None, raw=False):
+def call(method, path, body=None, raw=False, timeout=120):
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(API + path, data=data, method=method,
                                  headers={"Content-Type": "application/json"})
     for attempt in range(5):
         try:
-            with urllib.request.urlopen(req, timeout=120) as r:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
                 payload = r.read()
                 return payload if raw else json.loads(payload)
         except urllib.error.HTTPError as e:  # API answered with an error: return its JSON
@@ -42,6 +58,36 @@ def call(method, path, body=None, raw=False):
             log(f"  request {path} failed ({e}); retrying in 30s")
             time.sleep(30)
     raise SystemExit(f"Backend not reachable for {path}. Is `npm run dev` still running?")
+
+
+def run_survey():
+    """Interview every agent with SURVEY_QUESTIONS and save the answers as Markdown."""
+    profiles = call("GET", f"/simulation/{SIM}/profiles?platform=reddit")["data"]["profiles"]
+    names = {}
+    for i, p in enumerate(profiles):
+        aid = p.get("user_id", i)
+        names[aid] = p.get("name") or p.get("realname") or p.get("username") or f"agent {aid}"
+    os.makedirs(OUT_DIR, exist_ok=True)
+    path = os.path.join(OUT_DIR, f"{SIM}-survey.md")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(f"# Agent survey for {SIM}\n\n")
+    for qi, q in enumerate(SURVEY_QUESTIONS, 1):
+        log(f"Survey question {qi}/{len(SURVEY_QUESTIONS)} to {len(profiles)} agents (slow on free tier)")
+        res = call("POST", "/simulation/interview/all",
+                   {"simulation_id": SIM, "prompt": q, "platform": "reddit", "timeout": 1800},
+                   timeout=1900)
+        results = ((res.get("data") or {}).get("result") or {}).get("results") or {}
+        if not res.get("success"):
+            log(f"  question {qi} failed: {res.get('error')}")
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(f"## Q{qi}. {q}\n\n")
+            for key, r in sorted(results.items(), key=lambda kv: kv[1].get("agent_id", 0)):
+                who = names.get(r.get("agent_id"), f"agent {r.get('agent_id')}")
+                answer = str(r.get("response", "")).strip().replace("\n", " ")
+                f.write(f"- **{who}**: {answer}\n")
+            f.write("\n")
+        log(f"  saved {len(results)} answers")
+    log(f"Survey saved to {path}")
 
 
 def main():
@@ -89,6 +135,8 @@ def main():
         if rs == "failed":
             raise SystemExit("Simulation failed. Check the npm run dev window.")
         if not closed and run.get("twitter_completed") and run.get("reddit_completed"):
+            if SURVEY:
+                run_survey()
             log("All rounds done; closing the simulation environment")
             res = call("POST", "/simulation/close-env", {"simulation_id": SIM, "timeout": 60})
             if not res.get("success"):
