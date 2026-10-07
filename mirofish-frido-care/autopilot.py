@@ -98,19 +98,25 @@ def main():
         time.sleep(60 if closed else 120)
     log("Simulation finished")
 
-    # 4. Generate the report.
-    res = call("POST", "/report/generate", {"simulation_id": SIM})
-    if not res.get("success"):
-        raise SystemExit(f"Could not start report: {res.get('error')}")
-    task_id = res["data"].get("task_id")
-    while True:
-        st = call("POST", "/report/generate/status", {"task_id": task_id, "simulation_id": SIM})["data"]
-        log(f"  report {st.get('status')} {st.get('progress')}% {st.get('message', '')[:80]}")
+    # 4. Generate the report. Free LLM tiers rate-limit, so retry a failed report a few times.
+    for attempt in range(1, 4):
+        res = call("POST", "/report/generate", {"simulation_id": SIM})
+        if not res.get("success"):
+            raise SystemExit(f"Could not start report: {res.get('error')}")
+        task_id = res["data"].get("task_id")
+        log(f"Report attempt {attempt} started")
+        while True:
+            st = call("POST", "/report/generate/status", {"task_id": task_id, "simulation_id": SIM})["data"]
+            log(f"  report {st.get('status')} {st.get('progress')}% {str(st.get('message', ''))[:80]}")
+            if st.get("status") in ("completed", "failed"):
+                break
+            time.sleep(60)
         if st.get("status") == "completed":
             break
-        if st.get("status") == "failed":
-            raise SystemExit("Report generation failed. Check the npm run dev window.")
-        time.sleep(60)
+        log("  report failed; waiting 5 minutes before retrying")
+        time.sleep(300)
+    else:
+        raise SystemExit("Report generation failed 3 times. Check the npm run dev window.")
 
     # 5. Save the report.
     report_id = call("GET", f"/report/by-simulation/{SIM}")["data"]["report_id"]
