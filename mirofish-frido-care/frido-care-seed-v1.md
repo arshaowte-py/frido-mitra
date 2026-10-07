@@ -23,6 +23,11 @@ Frido Care is an app connecting practitioners, patients and Frido.
 - **Patient app:** the patient keeps their own copy of the prescription, buys suggested products with 10% off (delivered home),
   books services, follows exercises, and the physio stays in touch. Progress can be shared with the treating doctor.
 
+- **Consent and data:** patients consent before their health details are stored; the patient-physio relationship and data
+  ownership between Frido, the physio and the network is a sensitive point.
+- **Support for practitioners:** sample kit and QR cards in every bag, a Frido Care rep visits every ~21 days, zone WhatsApp
+  groups and a leaderboard. Practitioners with zero orders after 45 days are dropped from the active list.
+
 ## 4. Services (prices not final, expected ₹1,000–₹2,000 each)
 Ergonomic workspace assessment (on-site or virtual desk, chair and posture audit), personalised footwear,
 2D scan gait analysis, 3D Volumental foot scan with made-to-measure insole, sleep and bed assessment,
@@ -33,7 +38,9 @@ general physio consultation, full body assessment. Later: post-op rehabilitation
 - **Consultation fee:** the patient pays a consultation fee (around ₹800–₹1,000). If, after the consultation, the patient buys
   products above a certain amount, the fee is rebated to the patient and Frido bears the consultation cost. (Threshold OPEN.)
 - **Practitioner commission on products:** around 10–12% of each attributed order; a solo physio can reach 15% at a higher tier.
-  Paid monthly, only after delivery and the return window. Possible ₹500 first-order bonus and leaderboard prizes.
+  Paid monthly into an in-app wallet (tax deducted at source), only after delivery and the return window. The physio gets a
+  same-day message when a patient orders. Possible ₹500 first-order bonus and leaderboard prizes. Late or missed payouts
+  would quickly destroy physio trust.
 - **Centres and networks (super affiliates):** 3–5% override on every order by their member physios.
 - **Doctors registered with the medical council:** cannot receive cash for recommending products; they get non-cash benefits
   only (samples, listing, CME courses), or rewards go to the clinic entity.
@@ -45,7 +52,7 @@ general physio consultation, full body assessment. Later: post-op rehabilitation
 
 ## 6. Channels
 - **Home physios (volume):** see 6–7 patients a day, the same patient 8–10 times. They carry samples (knee cap, lumbar belt,
-  insole) in their bag. A free or paid assessment can lead to a large recommended basket (up to around ₹30,000 for a full
+  insole) in their bag. An assessment (consultation fee rebated if the patient buys above the threshold) can lead to a large recommended basket (up to around ₹30,000 for a full
   ergonomic setup) plus everyday products around ₹1,100.
 - **Ortho and sports-medicine doctors (high ticket):** back bundle (~₹4,800) and desk-posture bundle (~₹6,600) via a code
   printed on the prescription pad; referrals to assessments.
