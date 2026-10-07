@@ -167,7 +167,12 @@ def main():
         raise SystemExit("Report generation failed 3 times. Check the npm run dev window.")
 
     # 5. Save the report.
-    report_id = call("GET", f"/report/by-simulation/{SIM}")["data"]["report_id"]
+    # A simulation can have several reports (e.g. an earlier failed attempt); take the newest completed one.
+    reports = call("GET", f"/report/list?simulation_id={SIM}").get("data") or []
+    done = [r for r in reports if r.get("status") == "completed" and r.get("report_id")]
+    if not done:
+        raise SystemExit("No completed report found for this simulation.")
+    report_id = max(done, key=lambda r: r.get("completed_at") or r.get("created_at") or "")["report_id"]
     md = call("GET", f"/report/{report_id}/download", raw=True)
     os.makedirs(OUT_DIR, exist_ok=True)
     path = os.path.join(OUT_DIR, f"{SIM}.md")
