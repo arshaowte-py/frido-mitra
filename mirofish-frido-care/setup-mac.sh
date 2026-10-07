@@ -36,7 +36,9 @@ code=$(curl -s -o /tmp/nv_check.json -w "%{http_code}" https://integrate.api.nvi
   -d "{\"model\":\"$MODEL\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply OK\"}],\"max_tokens\":5}")
 if [ "$code" != "200" ]; then
   echo "NVIDIA check failed (HTTP $code):"; cat /tmp/nv_check.json; echo
-  echo "401 = wrong key. 404 = model not available: re-run with MODEL=mistralai/mistral-nemotron bash setup-mac.sh"
+  echo "401/403 = key rejected: generate a fresh key via 'Generate API Key' on a build.nvidia.com model page"
+  echo "          (Personal keys need the 'Public API Endpoints' service), put it in $DIR/.env, re-run."
+  echo "404     = model not available: re-run with MODEL=mistralai/mistral-nemotron bash setup-mac.sh"
   exit 1
 fi
 echo "NVIDIA key works."
