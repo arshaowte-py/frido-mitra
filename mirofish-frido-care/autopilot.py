@@ -10,6 +10,7 @@ import json
 import os
 import sys
 import time
+import urllib.error
 import urllib.request
 
 API = "http://localhost:5001/api"
@@ -31,6 +32,12 @@ def call(method, path, body=None, raw=False):
             with urllib.request.urlopen(req, timeout=120) as r:
                 payload = r.read()
                 return payload if raw else json.loads(payload)
+        except urllib.error.HTTPError as e:  # API answered with an error: return its JSON
+            payload = e.read()
+            try:
+                return json.loads(payload)
+            except ValueError:
+                return {"success": False, "error": f"HTTP {e.code}"}
         except Exception as e:  # backend busy or briefly unreachable
             log(f"  request {path} failed ({e}); retrying in 30s")
             time.sleep(30)
@@ -67,17 +74,28 @@ def main():
             raise SystemExit(f"Could not start: {res.get('error')}")
         log("Simulation started")
 
-    # 3. Wait for the simulation to finish.
+    # 3. Wait for the simulation to finish. After the last round the simulation process
+    #    stays open (waiting for agent interviews) and keeps reporting "running", so once
+    #    both platforms report completion we close the environment ourselves.
+    closed = False
     while True:
         run = call("GET", f"/simulation/{SIM}/run-status")["data"]
         rs = run.get("runner_status")
         log(f"  round {run.get('current_round')}/{run.get('total_rounds')} "
-            f"actions {run.get('total_actions_count')} status {rs}")
+            f"actions {run.get('total_actions_count')} status {rs} "
+            f"done twitter={run.get('twitter_completed')} reddit={run.get('reddit_completed')}")
         if rs in ("completed", "stopped"):
             break
         if rs == "failed":
             raise SystemExit("Simulation failed. Check the npm run dev window.")
-        time.sleep(120)
+        if not closed and run.get("twitter_completed") and run.get("reddit_completed"):
+            log("All rounds done; closing the simulation environment")
+            res = call("POST", "/simulation/close-env", {"simulation_id": SIM, "timeout": 60})
+            if not res.get("success"):
+                log(f"  close-env failed ({res.get('error')}); stopping instead")
+                call("POST", "/simulation/stop", {"simulation_id": SIM})
+            closed = True
+        time.sleep(60 if closed else 120)
     log("Simulation finished")
 
     # 4. Generate the report.
