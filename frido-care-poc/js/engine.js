@@ -6,6 +6,7 @@
 export const IDX = {
   nose: 0, l_ear: 7, r_ear: 8,
   l_shoulder: 11, r_shoulder: 12, l_elbow: 13, r_elbow: 14, l_wrist: 15, r_wrist: 16,
+  l_pinky: 17, r_pinky: 18, l_index: 19, r_index: 20,
   l_hip: 23, r_hip: 24, l_knee: 25, r_knee: 26, l_ankle: 27, r_ankle: 28,
   l_heel: 29, r_heel: 30, l_foot: 31, r_foot: 32,
 };

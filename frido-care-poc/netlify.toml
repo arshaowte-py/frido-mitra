@@ -2,6 +2,12 @@
 [build]
   publish = "."
 
+# "Ask the coach" endpoint. Needs ANTHROPIC_API_KEY in the site environment and a Git or CLI deploy
+# (drag-and-drop deploys do not include functions; the app then answers safety and form questions on the device).
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
 [[headers]]
   for = "/*"
   [headers.values]

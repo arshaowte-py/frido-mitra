@@ -1,0 +1,12 @@
+{
+  "name": "frido-care-exercise-coach",
+  "private": true,
+  "type": "module",
+  "description": "Frido Care exercise coach POC. Static site; the only dependency is for the optional Ask-the-coach Netlify Function.",
+  "scripts": {
+    "test": "node --test tests/engine.test.mjs tests/lesson.test.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.131.0"
+  }
+}

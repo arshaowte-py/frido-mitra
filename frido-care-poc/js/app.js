@@ -4,6 +4,7 @@ import { Session } from './session.js';
 import { CONFIG } from './config.js';
 import { BONES, IDX } from './engine.js';
 import { MEDIA, thumbUrl, embedUrl, watchUrl } from './media.js';
+import { CLASSES } from './lessons.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -66,7 +67,18 @@ function route() {
   const parts = (location.hash || '#/').slice(2).split('/');
   if (parts[0] === 'ex' && byId(parts[1])) return renderExercise(byId(parts[1]), parts[2] === 'plan' ? { planId: parts[3], idx: +parts[4] } : null);
   if (parts[0] === 'physio') return renderPhysio();
+  if (parts[0] === 'class') return renderClassRoute(parts[1]);
   renderHome(parts[0] === 'c' ? parts[1] : null);
+}
+
+// ---------------- guided class ----------------
+function renderClassRoute(id) {
+  refreshStatic = () => {};
+  app.innerHTML = '<p class="muted">Loading class…</p>';
+  import('./class-ui.js').then(m => {
+    if (!location.hash.startsWith(`#/class/${id}`)) return;
+    active = m.renderClass(app, id, { prefs, savePrefs, esc, modal, closeModal, saveSession, store, today });
+  });
 }
 
 // ---------------- home ----------------
@@ -98,6 +110,12 @@ function renderHome(filter) {
     <div class="hero-demo" aria-hidden="true">${heroFigure()}</div>
   </section>
 
+  ${CLASSES.map(c => `<section class="class-banner">
+    <div><p class="eyebrow">New · Guided class</p><h2>${esc(c.title.en)} <span class="lt">· the coach teaches you</span></h2>
+      <p class="muted">${esc(c.summary)} Answer by voice, ask questions any time. About ${c.minutes.quick} minutes in quick-demo mode.</p></div>
+    <a class="btn yellow" href="#/class/${c.id}">Start class</a>
+  </section>`).join('')}
+
   <section class="block">
     <div class="block-head"><p class="eyebrow">What is Frido Care</p><h2>Physio care <span class="lt">that continues at home</span></h2></div>
     <div class="about">
@@ -119,6 +137,7 @@ function renderHome(filter) {
           <h3>${esc(pl.en)}</h3>
           <ol>${items.map(e => `<li><span class="dot ${e.tier}"></span>${esc(e.title.en)}</li>`).join('')}</ol>
           <div class="row"><span class="muted small">${items.length} exercises · ${items.filter(e => e.tier === 'tracked').length} tracked</span><a class="btn" href="#/ex/${items[0].id}/plan/${pl.id}/0">Start plan</a></div>
+          ${CLASSES.filter(c => c.plan === pl.id).map(c => `<a class="class-link" href="#/class/${c.id}">Or take the guided class →</a>`).join('')}
           ${c.assortment ? `<div class="assort"><span class="lab">Frido products often paired:</span>${c.assortment.map(a => `<span>${esc(a)}</span>`).join('')}</div>` : ''}
         </article>`;
       }).join('')}
@@ -426,7 +445,7 @@ class ExerciseController {
       ctx.beginPath(); ctx.moveTo(X(pa), Y(pa)); ctx.lineTo(X(pb), Y(pb)); ctx.stroke();
     }
     for (const name of Object.keys(IDX)) {
-      const q = p.lm[IDX[name]]; if (!q || q.v < 0.3 || name.includes('ear') || name === 'nose') continue;
+      const q = p.lm[IDX[name]]; if (!q || q.v < 0.3 || /ear|nose|index|pinky/.test(name)) continue;
       ctx.fillStyle = faultJoints.has(name) ? col.bad : col.joint;
       ctx.beginPath(); ctx.arc(X(q), Y(q), lw * 1.2, 0, Math.PI * 2); ctx.fill();
     }
@@ -674,9 +693,20 @@ function renderPhysio() {
       }).join('')}</tbody></table></div>
       <button class="linkbtn" id="clearD">Clear demo data</button>`
       : `<div class="empty"><h2>No sessions yet</h2><p>Do an exercise from a plan and its reps, form score and pain answers appear here.</p><a class="btn" href="#/">Go to plans</a></div>`}
+    ${questionsBlock()}
     <p class="muted small">Suggestions follow the traffic-light rules in the brief and only go to the physio for approval; the patient's plan never changes on its own.</p>
   </section>`;
-  $('#clearD')?.addEventListener('click', () => { store.set('fc_sessions_v1', []); store.set('fc_checkin_v1', {}); renderPhysio(); });
+  $('#clearD')?.addEventListener('click', () => { store.set('fc_sessions_v1', []); store.set('fc_checkin_v1', {}); store.set('fc_questions_v1', []); renderPhysio(); });
+}
+function questionsBlock() {
+  const qs = store.get('fc_questions_v1', []);
+  if (!qs.length) return '';
+  const src = { ai: 'AI coach', 'on-device': 'On-device answer', saved: 'Coach could not answer' };
+  return `<div class="block-head"><h2>Questions from the patient</h2><p class="muted">Asked out loud during guided classes. Flagged ones need your attention.</p></div>
+    <div class="tbl"><table><thead><tr><th>When</th><th>Question</th><th>Coach's answer</th><th>Status</th></tr></thead><tbody>
+    ${qs.map(q => `<tr><td>${fmtTime(q.at)}</td><td>${esc(q.q)}<br><span class="muted small">${esc(q.exercise ? byId(q.exercise)?.title.en || '' : '')}</span></td><td>${esc(q.a)}</td>
+      <td><span class="tl ${q.stop ? 'red' : q.flagged || q.source === 'saved' ? 'amber' : 'green'}">${q.stop ? 'Stopped class' : q.source === 'saved' ? 'Needs your answer' : q.flagged ? 'Review' : 'Answered'}</span><br><span class="muted small">${src[q.source] || ''}</span></td></tr>`).join('')}
+    </tbody></table></div>`;
 }
 const fmtDur = ms => { const t = Math.max(0, Math.round(ms / 1000)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
 const fmtTime = t => new Date(t).toLocaleString('en-IN', { day: '2-digit', month: '2-digit', hour: 'numeric', minute: '2-digit' });

@@ -19,8 +19,10 @@ On a phone, open it from an HTTPS host. Any static host works (Netlify deploy pr
 Tests (engine only, no camera):
 
 ```bash
-node --test frido-care-poc/tests/engine.test.mjs
+node --test frido-care-poc/tests/engine.test.mjs frido-care-poc/tests/lesson.test.mjs
 ```
+
+The class tests run the whole heel-pain class against a simulated patient (synthetic landmarks that follow each instruction).
 
 ## Demo script (about 5 minutes)
 
@@ -49,6 +51,37 @@ Tips for a clean demo: plain background, good front lighting, fitted clothes, no
 | General mobility | Standing forward bend (reach level), Standing side leg raise, plus shared ones above | |
 
 Every number (target angles, hold times, fault thresholds, score weights) is a placeholder in `js/exercises.js` and `js/config.js` for the physio team to tune.
+
+## Guided class (new)
+
+Home → **Heel pain class**. Press Start and the coach teaches: it says one thing, waits until the camera sees you do it, then moves on, like an instructor in an online yoga class.
+
+- **Flow:** welcome → pain 0–10 → plantar fascia stretch → heel raises → balance → pain again → summary for the physio. The demo video plays large during each intro, then shrinks to a corner.
+- **Teaching steps:** "Sit facing the phone" waits until you're seated. "Rest your right ankle on your left knee" waits until it sees that. Stuck for 9 s, you get a hint; after 45 s it moves on.
+- **Holds** only count down while the position is kept. Let go of your toes and the timer pauses with "Keep holding your toes".
+- **Heel raises:** the coach walks through one rep slowly (up, hold, down), then you continue alone while it counts and corrects.
+- **Check-ins** such as "Can you feel the stretch? Say yes, no, or pain" are answered by voice (English, Hinglish or Hindi) or by tap. Each answer gets its own reply.
+- **Voice commands:** "next", "repeat", "ruko" / "pause", "chalo" / "continue".
+- **Ask the coach:** tap the mic (or press Space) and ask anything mid-exercise, or type the question.
+  - Red-flag symptoms stop the class and tell the person to contact their physio.
+  - "Am I doing it right?", "how long?" and pain questions are answered on the device from live measurements.
+  - Everything else goes to Claude (see below).
+  - Every question is logged in the Physio view.
+- **Length:** Quick demo (~4 min) or Full prescription (~9 min).
+
+### How an exercise becomes a guide
+
+`js/lessons.js` holds a short script per exercise: ordered steps of `say`, `demo`, `gate` (wait for a camera check), `checkin`, `hold`, `teachRep`, `reps` and `rest`. Camera checks come from a small reusable library in `js/predicates.js`: seated, standing, side-on, facing, foot on knee, hand at foot, foot lifted, sitting tall. `js/lesson-runner.js` runs any script.
+
+New exercises mostly need a new script, not new code: an AI model can draft one from the exercise steps and a physio approves it.
+
+### Ask the coach: setup
+
+The on-device answers work everywhere. AI answers need the Netlify Function in `netlify/functions/coach.mjs`:
+
+1. Deploy from Git (or the Netlify CLI). Drag-and-drop deploys don't include functions.
+2. In Netlify → Site configuration → Environment variables, add `ANTHROPIC_API_KEY`.
+3. The function calls Claude (`claude-opus-5-5`, low effort, server-side refusal fallback enabled). It receives only the question and the live session numbers, never camera images. Without a key, questions are saved for the physio instead.
 
 ## Design
 
