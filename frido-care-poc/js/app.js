@@ -3,6 +3,7 @@ import { EXERCISES, PLANS, CONDITIONS, CUES, FAULTS, byId } from './exercises.js
 import { Session } from './session.js';
 import { CONFIG } from './config.js';
 import { BONES, IDX } from './engine.js';
+import { MEDIA, thumbUrl, embedUrl, watchUrl } from './media.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -85,9 +86,9 @@ function renderHome(filter) {
   app.innerHTML = `
   <section class="hero">
     <div class="hero-copy">
-      <p class="eyebrow">Frido Care · Exercise Coach · POC</p>
-      <h1>Your phone watches the movement, counts the reps and guides the form.</h1>
-      <p class="lede">Pick a plan, prop the phone up, and move. The coach measures depth, stretch and hold time live, and speaks short cues in English or Hindi. The physio sees the results.</p>
+      <p class="eyebrow">Frido Care · Exercise Coach</p>
+      <h1>Your home exercises, <span class="lt">done right.</span></h1>
+      <p class="lede">Your Frido physio prescribes the plan. Prop up your phone and move: the coach counts reps, measures depth, stretch and hold time, and gives short voice cues in English or Hindi. Your physio sees how it went.</p>
       <ul class="facts">
         <li><b>${tracked}</b> camera-tracked exercises</li>
         <li><b>${EXERCISES.length - tracked}</b> guided with voice timer</li>
@@ -95,6 +96,16 @@ function renderHome(filter) {
       </ul>
     </div>
     <div class="hero-demo" aria-hidden="true">${heroFigure()}</div>
+  </section>
+
+  <section class="block">
+    <div class="block-head"><p class="eyebrow">What is Frido Care</p><h2>Physio care <span class="lt">that continues at home</span></h2></div>
+    <div class="about">
+      <div><span class="n">1</span><h3>See a Frido physio</h3><p>Patients are connected with Frido partner physiotherapists, in clinic or online.</p></div>
+      <div><span class="n">2</span><h3>Get a plan</h3><p>The physio prescribes exercises and, where useful, Frido products, all in one place in the app.</p></div>
+      <div><span class="n">3</span><h3>Exercise with a coach</h3><p>Video guidance, a timer, voice counting and, for tracked exercises, live form feedback from the phone camera.</p></div>
+      <div><span class="n">4</span><h3>Physio follows up</h3><p>Pain, adherence and form scores go back to the physio, who adjusts the plan and books the next visit.</p></div>
+    </div>
   </section>
 
   <section class="block">
@@ -107,7 +118,8 @@ function renderHome(filter) {
           <div class="plan-top"><span class="cond">${esc(c.en)}</span><span class="src ${pl.source.startsWith('Draft') ? 'draft' : ''}">${pl.source.startsWith('Draft') ? 'Draft' : 'Frido protocol'}</span></div>
           <h3>${esc(pl.en)}</h3>
           <ol>${items.map(e => `<li><span class="dot ${e.tier}"></span>${esc(e.title.en)}</li>`).join('')}</ol>
-          <a class="btn" href="#/ex/${items[0].id}/plan/${pl.id}/0">Start plan</a>
+          <div class="row"><span class="muted small">${items.length} exercises · ${items.filter(e => e.tier === 'tracked').length} tracked</span><a class="btn" href="#/ex/${items[0].id}/plan/${pl.id}/0">Start plan</a></div>
+          ${c.assortment ? `<div class="assort"><span class="lab">Frido products often paired:</span>${c.assortment.map(a => `<span>${esc(a)}</span>`).join('')}</div>` : ''}
         </article>`;
       }).join('')}
     </div>
@@ -122,13 +134,35 @@ function renderHome(filter) {
     </div>
     <div class="cards">
       ${list.map(e => `<a class="card" href="#/ex/${e.id}">
+        ${thumb(e)}
+        <div class="card-body">
         <div class="card-top">${tierBadge(e)}<span class="meta">${e.view ? `${e.view} view · ` : ''}${e.position}</span></div>
         <h3>${esc(e.title.en)}</h3><p class="hi" lang="hi">${esc(e.title.hi)}</p>
         <p class="purpose">${esc(e.purpose)}</p>
         <div class="card-foot"><span>${esc(dosageText(e))}</span>${e.label && e.tier === 'tracked' ? `<span class="measures">Measures: ${esc(e.label.toLowerCase())}</span>` : `<span class="measures">${esc(e.why || '')}</span>`}</div>
+        </div>
       </a>`).join('')}
     </div>
   </section>`;
+}
+
+function thumb(e) {
+  const m = MEDIA[e.id];
+  if (!m) return '<div class="thumb empty">Demo video coming soon</div>';
+  return `<div class="thumb"><img src="${thumbUrl(m.videoId)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"><span class="play"><i aria-hidden="true">▶</i>Demo · ${esc(m.length)}</span></div>`;
+}
+
+function openVideo(ex) {
+  const m = MEDIA[ex.id]; if (!m) return;
+  const md = modal(`<div class="modal-head"><div><p class="eyebrow">Demonstration</p><h2>${esc(ex.title.en)}</h2></div><button class="close-x" id="vClose" aria-label="Close">✕</button></div>
+    <div class="video-frame"><iframe src="${embedUrl(m.videoId)}" title="${esc(m.title)}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+    <p class="muted small">“${esc(m.title)}” · ${esc(m.channel)} on YouTube. <a href="${watchUrl(m.videoId)}" target="_blank" rel="noopener">Open on YouTube</a>. Placeholder until Frido records its own demos.</p>`);
+  md.classList.add('wide');
+  const close = () => { closeModal(); document.removeEventListener('keydown', esc_); };
+  const esc_ = ev => { if (ev.key === 'Escape') close(); };
+  document.addEventListener('keydown', esc_);
+  $('#vClose', md).onclick = close;
+  $('#modal').addEventListener('click', ev => { if (ev.target.id === 'modal') close(); });
 }
 
 function heroFigure() {
@@ -179,14 +213,20 @@ function renderExercise(ex, plan) {
         </div>
         <details class="howto" open>
           <summary>How to do it</summary>
-          <p class="muted">${esc(ex.purpose)}</p>
-          <ol>${ex.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
-          ${ex.setup ? `<p class="setup-tip"><b>Phone setup:</b> ${esc(ex.setup)}</p>` : ''}
+          <div class="howto-grid">
+            <div style="display:grid;gap:10px;min-width:0">
+              <p class="muted">${esc(ex.purpose)}</p>
+              <ol>${ex.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
+              ${ex.setup ? `<p class="setup-tip"><b>Phone setup:</b> ${esc(ex.setup)}</p>` : ''}
+            </div>
+            ${MEDIA[ex.id] ? `<button type="button" class="demo" id="demoBtn" aria-label="Watch demonstration video">${thumb(ex)}<small>Watch the demo · ${esc(MEDIA[ex.id].channel)}</small></button>` : ''}
+          </div>
         </details>
       </div>
       <aside class="panel" id="panel" aria-live="off"></aside>
     </div>
   </section>`;
+  $('#demoBtn')?.addEventListener('click', () => openVideo(ex));
   active = new ExerciseController(ex, plan);
 }
 
@@ -398,11 +438,11 @@ class ExerciseController {
         const q = p.pt(s.spec.focus, side); if (!q) continue;
         const txt = `${s.spec.fmt(tk.value, tk)}`;
         if (!txt) continue;
-        const fs = Math.max(13, W / 45); ctx.font = `600 ${fs}px "IBM Plex Mono", ui-monospace, monospace`;
+        const fs = Math.max(13, W / 45); ctx.font = `600 ${fs}px "Outfit", system-ui, sans-serif`;
         const tw = ctx.measureText(txt).width + fs, th = fs * 1.7;
         let x = X(q) + fs, y = Y(q) - th / 2;
         x = Math.min(W - tw - 4, Math.max(4, x)); y = Math.min(H - th - 4, Math.max(4, y));
-        ctx.fillStyle = 'rgba(17,20,24,.82)'; roundRect(ctx, x, y, tw, th, th / 2); ctx.fill();
+        ctx.fillStyle = 'rgba(16,24,32,.85)'; roundRect(ctx, x, y, tw, th, th / 2); ctx.fill();
         ctx.fillStyle = '#fff'; ctx.fillText(txt, x + fs / 2, y + th * 0.66);
       }
     }
@@ -419,11 +459,11 @@ class ExerciseController {
     const R = Math.min(W, H) * 0.3, cx = W / 2, cy = H / 2;
     ctx.lineWidth = R * 0.12; ctx.lineCap = 'round';
     ctx.strokeStyle = css.getPropertyValue('--stage-ring').trim(); ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
-    ctx.strokeStyle = css.getPropertyValue('--accent').trim(); ctx.beginPath(); ctx.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = css.getPropertyValue('--yellow').trim(); ctx.beginPath(); ctx.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2); ctx.stroke();
     ctx.fillStyle = css.getPropertyValue('--stage-fg').trim(); ctx.textAlign = 'center';
-    ctx.font = `700 ${R * 0.5}px "Plus Jakarta Sans", system-ui, sans-serif`;
+    ctx.font = `700 ${R * 0.5}px "Outfit", system-ui, sans-serif`;
     ctx.fillText(g.resting ? Math.ceil(left / 1000) : g.phaseIdx < 0 ? '…' : Math.ceil(left / 1000), cx, cy + R * 0.18);
-    ctx.font = `600 ${Math.max(14, R * 0.14)}px "Plus Jakarta Sans", system-ui, sans-serif`;
+    ctx.font = `600 ${Math.max(14, R * 0.14)}px "Outfit", system-ui, sans-serif`;
     ctx.fillText(g.resting ? 'Rest' : ph ? tr(ph) : 'Get ready', cx, cy + R * 1.45);
     ctx.textAlign = 'start';
   }

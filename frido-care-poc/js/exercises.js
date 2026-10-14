@@ -82,12 +82,13 @@ export const FAULTS = {
 const FOOT_SRC = 'Frido Foot Core Exercises protocol';
 const DRAFT = 'Draft: physio to approve';
 
+// `assortment`: Frido product categories a physio may pair with the plan (draft; merchandising to map SKUs).
 export const CONDITIONS = [
-  { id: 'foot', en: 'Foot & heel', hi: 'पैर और एड़ी', note: 'Plantar fasciitis, flat feet, foot fatigue' },
-  { id: 'back', en: 'Lower back', hi: 'कमर दर्द', note: 'Desk-related and non-specific low back pain' },
-  { id: 'knee', en: 'Knee', hi: 'घुटना', note: 'Knee pain, early OA, strengthening' },
-  { id: 'neck', en: 'Neck & shoulder', hi: 'गर्दन और कंधा', note: 'Desk posture, stiffness' },
-  { id: 'mobility', en: 'General mobility', hi: 'सामान्य लचीलापन', note: 'Daily movement and flexibility' },
+  { id: 'foot', en: 'Foot & heel', hi: 'पैर और एड़ी', note: 'Plantar fasciitis, flat feet, foot fatigue', assortment: ['Orthotic insoles', 'Footwear'] },
+  { id: 'back', en: 'Lower back', hi: 'कमर दर्द', note: 'Desk-related and non-specific low back pain', assortment: ['Cushions', 'Chairs', 'Mattress'] },
+  { id: 'knee', en: 'Knee', hi: 'घुटना', note: 'Knee pain, early OA, strengthening', assortment: ['Orthotics', 'Mobility aids'] },
+  { id: 'neck', en: 'Neck & shoulder', hi: 'गर्दन और कंधा', note: 'Desk posture, stiffness', assortment: ['Pillows', 'Chairs'] },
+  { id: 'mobility', en: 'General mobility', hi: 'सामान्य लचीलापन', note: 'Daily movement and flexibility', assortment: ['Footwear', 'Cushions'] },
 ];
 
 // ---------- the library ----------

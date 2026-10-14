@@ -50,6 +50,28 @@ Tips for a clean demo: plain background, good front lighting, fitted clothes, no
 
 Every number (target angles, hold times, fault thresholds, score weights) is a placeholder in `js/exercises.js` and `js/config.js` for the physio team to tune.
 
+## Design
+
+Follows the Frido Brand Book (2024), applied lightly:
+
+- Colours: Frido Yellow `#FFD100`, Frido Black `#101820` and white lead. Secondary blues, mint `#80E0A7` and coral `#FF585D` are used only as status colours (good / attention / fault).
+- Type: Outfit, the brand's secondary typeface (Gilroy is the primary typeface but isn't freely licensed for the web).
+- Shapes: pill buttons, hairline borders, and panels with one large rounded corner, as in the brand book layouts.
+- The official Frido logo isn't embedded yet. The header shows "Frido Care" in Outfit with the yellow ring from the logo clear-space mark. Drop the official SVG into `assets/` when the brand team shares it.
+- All tokens are at the top of `css/styles.css`.
+
+## Demo videos
+
+Each exercise links to a short third-party YouTube demonstration (`js/media.js`), mostly from physiotherapy and hospital channels. They play in a privacy-enhanced `youtube-nocookie.com` embed when the user taps the thumbnail, and are placeholders until Frido records its own demos (brief §10). Check embeds still work before a demo; channel owners can disable embedding.
+
+## Moving to its own repo
+
+The folder is self-contained (no build step, no dependencies outside it):
+
+1. Copy everything in `frido-care-poc/` to the root of the new repo.
+2. Netlify: publish directory `.` (already set in `netlify.toml`, which also allows camera access and caches the model files).
+3. Tests: `node --test tests/engine.test.mjs`.
+
 ## How it works
 
 ```
