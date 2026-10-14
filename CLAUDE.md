@@ -39,3 +39,6 @@ Views (hash-routed, all rendered from embedded data):
 
 ## Context docs
 - `docs/engine-os-design.md` — full system design (schema, views, 14-day plan). Read before structural changes.
+
+## Other projects in this repo
+- `frido-care-poc/`: Frido Care Exercise Coach, a separate static POC (on-device camera rep counting and form cues). See `frido-care-poc/README.md`. Not part of the Engine OS dashboard.

@@ -1,0 +1,72 @@
+# Frido Care · Exercise Coach (POC)
+
+A browser proof of concept for the Frido Care exercise module (brief: *Frido Care — Exercise Prescription, Tracking & Form Guidance*, Phase 2 camera tracking). The phone or laptop camera watches the patient, counts reps, measures depth, stretch and hold time live, speaks short form cues in English or Hindi, and sends a summary to a physio view.
+
+Everything runs on the device. Pose detection is Google MediaPipe Pose Landmarker (Apache-2.0), vendored in `vendor/` with its models in `models/`, so the demo needs no CDN and no backend. No video frame is stored or uploaded. Session results are saved in the browser's localStorage for the demo.
+
+## Run it
+
+Camera access needs `localhost` or HTTPS.
+
+```bash
+# from the repo root
+python3 -m http.server 8000
+# open http://localhost:8000/frido-care-poc/ in Chrome
+```
+
+On a phone, open it from an HTTPS host. Any static host works (Netlify deploy preview, Vercel, GitHub Pages); the folder is self-contained.
+
+Tests (engine only, no camera):
+
+```bash
+node --test frido-care-poc/tests/engine.test.mjs
+```
+
+## Demo script (about 5 minutes)
+
+1. **Home.** Six condition plans. The two foot plans use the Frido Foot Core protocol; the others are drafts for physio approval. Blue dot means camera tracked, hollow dot means guided.
+2. **Squat** (Knee plan, or Library → Squat). Stand side-on to the laptop, about 2.5 m away, head to feet in view. Start with camera → pain check → camera check (lighting, body in view, distance, one person) → 3-2-1.
+   - Do 2 good squats: count is spoken, depth bar fills to the target line, form score ≈ 90–100.
+   - Do 1 shallow squat with your chest dropped forward: "Keep your chest up", amber/red score, both issues listed.
+   - Do a quarter squat: not counted, and the coach says "Almost. Go a bit further next time."
+3. **Heel raises** (Foot plan). Side-on, feet in view. Stand still for calibration, then rise and hold 2 s: lift shown in cm (estimated), hold timer, "Hold complete".
+4. **Standing side bend** (front view): left and right counted separately, bend angle shown live.
+5. **Toe yoga**: guided mode. Voice, timer ring and per-foot counts, because the camera can't see individual toes.
+6. **Finish → summary** (reps, form score, best range, what to work on, pain after) → **Physio view**: adherence, form trend, pain before/after, traffic-light suggestion, red-flag alerts.
+
+Toggle **EN / हिं** in the header to switch voice and captions to Hindi. Hindi needs a Hindi voice on the device (Chrome on Android and Windows/macOS usually have one); otherwise the app falls back to English. Use **Camera view / Stick figure** on the stage to hide the live image.
+
+Tips for a clean demo: plain background, good front lighting, fitted clothes, nobody else in frame. If the room doesn't work, use **Use a video file** with a short phone recording.
+
+## What's tracked
+
+| Condition | Camera tracked | Guided (voice + timer) |
+|---|---|---|
+| Foot & heel (Frido protocol) | Heel raises, Plantar fascia stretch, Foot roller massage, Balance board hold | Toe yoga, Short foot, Toe splay, Toe squish, Towel scrunches, Toe curl with band |
+| Lower back | Knee to chest, Glute bridge, Bird-dog, Standing side bend | Pelvic tilt, Cat-camel |
+| Knee | Squat, Sit to stand, Straight leg raise, Seated knee extension | |
+| Neck & shoulder | Neck side stretch, Shoulder raise (forward), Shoulder raise (sideways) | Chin tuck |
+| General mobility | Standing forward bend (reach level), Standing side leg raise, plus shared ones above | |
+
+Every number (target angles, hold times, fault thresholds, score weights) is a placeholder in `js/exercises.js` and `js/config.js` for the physio team to tune.
+
+## How it works
+
+```
+camera frame → MediaPipe pose (33 keypoints, on device) → One Euro smoothing
+  → joint angles from the exercise's movement spec → rep / hold state machine (with hysteresis)
+  → per-rep form checks + range + hold + tempo → form score 0–100 → one spoken cue at a time
+```
+
+- `js/engine.js`: pure tracking engine (no DOM, no camera): geometry, smoothing, `RepTracker`, `StrokeTracker`, `BalanceTracker`. This is the module to port to the React Native app (brief §9.5).
+- `js/exercises.js`: the exercise library and movement specs (brief §7): camera view, required joints, measured angle, start/target, hold, form checks and cue copy (EN + HI).
+- `js/session.js`: one exercise session: camera checks (brief §8), calibration, sets × reps × sides, cue throttling, guided fallback, summary.
+- `js/app.js`: UI (plans, library, live session, summary, physio view).
+
+## Known limits of the POC
+
+- Thresholds are untested on real patients; they need the validation pass in brief §18 (physio-labelled recordings, Indian home conditions).
+- Single camera, 2D angles: each exercise needs the camera view it declares (side or front). Knee caving inward needs a front-view variant, which isn't built yet.
+- The camera can't see toes, so toe exercises are guided only.
+- Browser speech voices vary by device; the real app should use recorded voice packs (brief §10).
+- Data lives in this browser only; the real app syncs to Supabase (Mumbai) per the brief.
