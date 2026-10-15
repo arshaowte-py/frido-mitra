@@ -133,3 +133,60 @@ test('voice input during a check-in answers it; other speech becomes a question'
   assert.equal(r.results.checkins.k, 'no');
   assert.ok(io.said.some(x => x.text === 'Pull more.'));
 });
+
+// ---------- trial records (brief §4: prescribed vs camera-counted vs not counted vs unassessed) ----------
+import { createRecords, classRecords, toCSV, SCHEMA } from '../js/records.js';
+
+const memStore = () => { const m = new Map(); return { get: (k, d) => (m.has(k) ? m.get(k) : d), set: (k, v) => m.set(k, v) }; };
+function recordsFor(run, mode) {
+  const recs = createRecords(memStore()); recs.setTrial({ participantId: 'fc-t07', consent: true });
+  const items = classById('heel-pain').items.map(byId);
+  return classRecords(recs, { cls: classById('heel-pain'), items, steps: run.r.steps, dose: 'quick', mode, results: run.r.results, sessionId: 'S1' });
+}
+
+test('class records separate prescribed, camera-counted and unassessed work and carry stable ids', () => {
+  const recs = recordsFor(runClass(), 'camera');
+  assert.equal(recs.length, 3);
+  for (const r of recs) {
+    assert.equal(r.schema, SCHEMA); assert.equal(r.participantId, 'FC-T07'); assert.equal(r.sessionId, 'S1');
+    assert.ok(r.recordId && r.deviceId && r.specVersion && r.exerciseId);
+  }
+  const heel = recs.find(r => r.exerciseId === 'heel-raise');
+  assert.deepEqual({ p: heel.reps.prescribed, c: heel.reps.cameraCounted, u: heel.reps.unassessed }, { p: DOSES.quick.heelReps, c: DOSES.quick.heelReps, u: 0 });
+  assert.ok(heel.trackingCoverage > 0.95, `coverage ${heel.trackingCoverage}`);
+  const plantar = recs.find(r => r.exerciseId === 'plantar-stretch');
+  assert.equal(plantar.holds.prescribed, 2); assert.equal(plantar.holds.completed, 2); assert.equal(plantar.holds.verified, true);
+  assert.deepEqual(plantar.checkins.map(c => c.key), ['stretch_R', 'stretch_L'], 'one check-in per foot');
+  assert.equal(toCSV(recs).split('\n').length, 4);
+});
+
+test('without a camera nothing is reported as camera-counted', () => {
+  const recs = recordsFor(runClass({ noCamera: true }), 'no_camera');
+  const heel = recs.find(r => r.exerciseId === 'heel-raise');
+  assert.equal(heel.reps.cameraCounted, null);
+  assert.equal(heel.reps.unassessed, heel.reps.prescribed);
+  assert.equal(recs.find(r => r.exerciseId === 'plantar-stretch').holds.verified, false);
+});
+
+test('when the patient leaves the frame mid-set, missing reps are unassessed and the coach says so', () => {
+  // a patient who disappears 6 s into the heel-raise set
+  const io = stubIO();
+  const steps = buildClass(classById('heel-pain'), 'quick', titles);
+  const r = new ClassRunner(steps, io);
+  let t = 1000, stepIdx = -1, stepT0 = t; r.start(t);
+  while (!r.done && t < 900000) {
+    t += 33;
+    if (r.i !== stepIdx) { stepIdx = r.i; stepT0 = t; }
+    if (r.awaiting() === 'pain' && t - stepT0 > 500) r.answer(3, t);
+    if (r.awaiting() === 'checkin' && t - stepT0 > 500) r.answer('yes', t);
+    const gone = r.step?.type === 'reps' && t - stepT0 > 6000;
+    r.tick(gone ? null : patient(r, t - stepT0), gone ? null : ENV, t);
+  }
+  assert.ok(r.done);
+  const recs = recordsFor({ r }, 'camera');
+  const heel = recs.find(x => x.exerciseId === 'heel-raise');
+  assert.ok(heel.reps.cameraCounted < heel.reps.prescribed && heel.reps.unassessed > 0, JSON.stringify(heel.reps));
+  assert.equal(heel.reps.cameraCounted + heel.reps.unassessed, heel.reps.prescribed);
+  assert.ok(heel.trackingCoverage < 0.9, `coverage ${heel.trackingCoverage}`);
+  assert.ok(io.said.some(x => /won't be scored/.test(x.text)), 'coach says the step was not scored');
+});

@@ -145,7 +145,7 @@ export const CLASSES = [
     items: ['plantar-stretch', 'heel-raise', 'balance'],
     minutes: { quick: 4, full: 9 },
     welcome: { en: 'Namaste. This is your heel pain class from your physio. Three exercises. I will guide you step by step and watch your form on the camera. You can ask me anything: tap the mic or press the space bar.', hi: 'नमस्ते। यह आपके फ़िज़ियो की एड़ी दर्द क्लास है। तीन व्यायाम हैं। मैं हर कदम पर आपको बताऊँगी और कैमरे से आपका तरीका देखूँगी। कुछ भी पूछना हो तो माइक दबाइए।' },
-    closing: { en: 'Class complete. Well done. Your physio will see how it went.', hi: 'क्लास पूरी हुई। शाबाश। आपके फ़िज़ियो देख पाएँगे कि कैसा रहा।' },
+    closing: { en: 'Class complete. Well done. Your results are in your session record for your physio.', hi: 'क्लास पूरी हुई। शाबाश। आपके नतीजे आपके फ़िज़ियो के लिए सेशन रिकॉर्ड में हैं।' },
   },
 ];
 

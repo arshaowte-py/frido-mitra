@@ -24,8 +24,8 @@ export function localAnswer(q, ctx) {
   }
   if (has(q, PAIN)) {
     return { flagged: true, answer: {
-      en: "A gentle stretch or mild discomfort is okay. Pain should stay low and settle soon after. If it's sharp or getting worse, stop and tell your physio. I've noted this for them.",
-      hi: 'हल्का खिंचाव या थोड़ी असुविधा ठीक है। दर्द कम रहना चाहिए और जल्दी ठीक हो जाना चाहिए। अगर तेज़ दर्द हो या बढ़ रहा हो, तो रुकिए और अपने फ़िज़ियो को बताइए। मैंने उनके लिए नोट कर लिया है।' } };
+      en: "A gentle stretch or mild discomfort is okay. Pain should stay low and settle soon after. If it's sharp or getting worse, stop and tell your physio. I've added this to your session record for them.",
+      hi: 'हल्का खिंचाव या थोड़ी असुविधा ठीक है। दर्द कम रहना चाहिए और जल्दी ठीक हो जाना चाहिए। अगर तेज़ दर्द हो या बढ़ रहा हो, तो रुकिए और अपने फ़िज़ियो को बताइए। मैंने इसे आपके सेशन रिकॉर्ड में जोड़ दिया है।' } };
   }
   if (has(q, FORM) && has(q, ASKING_ME)) return { answer: formAnswer(ctx) };
   if (has(q, HOW_LONG)) return { answer: remainingAnswer(ctx) };
@@ -63,7 +63,7 @@ export async function askCoach(question, ctx, lang) {
   } catch (e) {
     console.warn('Coach endpoint unavailable:', e.message);
     return { source: 'saved', flagged: false, answer: {
-      en: "Good question. I've saved it for your physio, who will answer it at your next session.",
-      hi: 'अच्छा सवाल है। मैंने इसे आपके फ़िज़ियो के लिए सेव कर लिया है, वे अगली बार जवाब देंगे।' } };
+      en: "Good question. I can't answer that one, so I've added it to your session record for your physio to see.",
+      hi: 'अच्छा सवाल है। मैं इसका जवाब नहीं दे सकती, इसलिए इसे आपके सेशन रिकॉर्ड में जोड़ दिया है ताकि आपके फ़िज़ियो देख सकें।' } };
   }
 }

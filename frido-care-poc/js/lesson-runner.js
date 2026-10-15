@@ -1,7 +1,7 @@
 // Frido Care · guided class runner.
 // Pure state machine (no DOM, no camera): the UI feeds pose frames and taps/voice, the runner decides
 // what the coach says next and when a step is done. Testable with synthetic landmarks.
-import { makePose, PoseSmoother, RepTracker, dist, mid, avg } from './engine.js';
+import { makePose, PoseSmoother, RepTracker, dist, mid, avg, visibilityScore } from './engine.js';
 import { check, allPass } from './predicates.js';
 import { byId, CUES, FAULTS } from './exercises.js';
 import { CONFIG } from './config.js';
@@ -9,6 +9,7 @@ import { CONFIG } from './config.js';
 const L = {
   good: { en: 'Good.', hi: 'बढ़िया।' },
   carryOn: { en: "Let's carry on.", hi: 'चलिए आगे बढ़ते हैं।' },
+  notChecked: { en: "I couldn't check that on the camera, so this step won't be scored. Let's carry on.", hi: 'मैं कैमरे पर यह जाँच नहीं पाई, इसलिए इस कदम का स्कोर नहीं बनेगा। चलिए आगे बढ़ते हैं।' },
   keepPosition: { en: 'Get back into position.', hi: 'फिर से उसी स्थिति में आइए।' },
   thanks: { en: 'Thank you.', hi: 'धन्यवाद।' },
   stayUp: { en: 'Stay up on your toes.', hi: 'पंजों पर ही रहिए।' },
@@ -67,7 +68,7 @@ export class ClassRunner {
     this.smoother = new PoseSmoother(CONFIG);
     this.i = -1; this.st = null; this.paused = false; this.held = false; this.done = false;
     this.cal = {}; this.sides = {}; this.cue = null; this.caption = null; this.lastT = null;
-    this.results = { painPre: null, painPost: null, checkins: {}, answers: [], holds: [], reps: [], gates: [], questions: [], flags: [], startedAt: Date.now() };
+    this.results = { painPre: null, painPost: null, checkins: {}, answers: [], holds: [], reps: [], gates: [], questions: [], flags: [], tracking: {}, startedAt: Date.now() };
   }
 
   get step() { return this.steps[this.i]; }
@@ -103,6 +104,7 @@ export class ClassRunner {
     this.lastT = t;
     this.pose = raw && env ? makePose(this.smoother.apply(raw, t, env.aspect)) : null;
     if (this.paused || this.held || this.i < 0) return;
+    this.trackCoverage(this.step, this.pose, dt);
     if (this.update(this.step, this.pose, t, dt)) this.next(t);
   }
 
@@ -142,7 +144,7 @@ export class ClassRunner {
           st.okSince ??= t;
           if (!speaking && t - st.okSince >= 700) {
             if (s.praise && !this.noCamera) this.say(L.good, 'ok');
-            this.results.gates.push({ exercise: s.exercise, label: s.label, ms: Math.round(t - st.t0), hints: st.hints, skipped: false });
+            this.results.gates.push({ exercise: s.exercise, label: s.label, ms: Math.round(t - st.t0), hints: st.hints, skipped: false, reason: null });
             return true;
           }
         } else {
@@ -151,8 +153,8 @@ export class ClassRunner {
             this.say(s.hint, 'hint'); st.hints++; st.lastHint = t;
           }
           if (!speaking && t - st.t0 > (s.maxWait ?? 45000)) {
-            this.say(L.carryOn, 'info');
-            this.results.gates.push({ exercise: s.exercise, label: s.label, ms: Math.round(t - st.t0), hints: st.hints, skipped: true });
+            this.say(L.notChecked, 'info');
+            this.results.gates.push({ exercise: s.exercise, label: s.label, ms: Math.round(t - st.t0), hints: st.hints, skipped: true, reason: 'not_detected' });
             return true;
           }
         }
@@ -175,13 +177,13 @@ export class ClassRunner {
         if (ok) {
           st.elapsed += dt; st.lostSince = null;
         } else {
-          st.lostSince ??= t;
+          st.lostSince ??= t; st.lostMs = (st.lostMs || 0) + dt;
           if (t - st.lostSince > 1200 && t - st.lastCorr > 5000) {
             const failing = s.keep.find(c => !check(c, p));
             this.correct(s.lost?.[failing] || L.keepPosition);
             st.lastCorr = t; st.lostCount++;
           }
-          if (t - st.lostSince > 20000) { this.say(L.carryOn, 'info'); this.recordHold(s, st, true); return true; }
+          if (t - st.lostSince > 20000) { this.say(L.notChecked, 'info'); this.recordHold(s, st, 'position_lost'); return true; }
         }
         if (ok && p && !this.noCamera) {
           for (const w of s.watch || []) {
@@ -195,7 +197,7 @@ export class ClassRunner {
         }
         const remaining = Math.ceil(s.seconds - st.elapsed / 1000);
         if (ok && s.seconds >= 8 && remaining <= 3 && remaining >= 1 && remaining !== st.lastCount) { st.lastCount = remaining; this.io.say(remaining, 'count'); }
-        if (st.elapsed >= s.seconds * 1000) { this.recordHold(s, st, false); return true; }
+        if (st.elapsed >= s.seconds * 1000) { this.recordHold(s, st, 'complete'); return true; }
         return false;
       }
 
@@ -230,7 +232,7 @@ export class ClassRunner {
         } else if (st.phase === 'finish') {
           return !speaking;
         }
-        if (t - st.t0 > 45000 && !speaking) { this.say(L.carryOn, 'info'); return true; }
+        if (t - st.t0 > 45000 && !speaking) { this.say(L.notChecked, 'info'); this.results.gates.push({ exercise: s.exercise, label: 'Guided rep', ms: Math.round(t - st.t0), hints: 0, skipped: true, reason: 'not_detected' }); return true; }
         return false;
       }
 
@@ -249,7 +251,7 @@ export class ClassRunner {
     if (!st.started) { if (speaking) return false; st.started = true; st.lastRepT = t; }
     if (this.noCamera) {
       if (t - st.lastRepT > 3500) { st.simCount++; st.lastRepT = t; this.io.say(st.simCount, 'count'); }
-      if (st.simCount >= s.n) { this.results.reps.push({ exercise: s.exercise, label: s.label, target: s.n, done: st.simCount, quality: [], faults: {}, tracked: false }); return true; }
+      if (st.simCount >= s.n) { this.recordReps(s, st, 'complete'); return true; }
       return false;
     }
     const { spec, tr } = st;
@@ -277,18 +279,48 @@ export class ClassRunner {
       }
     }
     if (tr.count >= s.n || (t - st.lastRepT > 30000 && !speaking)) {
-      if (tr.count < s.n) this.say(L.carryOn, 'info');
-      const faults = {};
-      for (const r of tr.reps) for (const f of r.failed) faults[f] = (faults[f] || 0) + 1;
-      this.results.reps.push({ exercise: s.exercise, label: s.label, target: s.n, done: tr.count, quality: tr.reps.map(r => r.quality), faults, tracked: true });
+      if (tr.count < s.n) this.say(L.notChecked, 'info');
+      this.recordReps(s, st, tr.count >= s.n ? 'complete' : 'no_reps_detected');
       return true;
     }
     return false;
   }
 
-  recordHold(s, st, partial) {
+  /**
+   * Reps are reported as: prescribed, camera-counted (full movement seen), not counted (attempts that
+   * fell short of the counting threshold) and unassessed (prescribed reps the camera never assessed,
+   * e.g. the set was skipped, tracking was lost, or the class ran without a camera).
+   */
+  recordReps(s, st, ended) {
+    const tr = st.tr, tracked = !this.noCamera;
+    const counted = tracked ? tr.count : null;
+    const faults = {};
+    if (tracked) for (const r of tr.reps) for (const f of r.failed) faults[f] = (faults[f] || 0) + 1;
+    this.results.reps.push({ exercise: s.exercise, label: s.label, prescribed: s.n, cameraCounted: counted,
+      notCounted: tracked ? tr.partials : null, unassessed: tracked ? Math.max(0, s.n - tr.count) : s.n,
+      selfPaced: tracked ? null : st.simCount, ended, tracked,
+      quality: tracked ? tr.reps.map(r => r.quality) : [], faults,
+      // kept for older readers
+      target: s.n, done: tracked ? tr.count : st.simCount });
+  }
+
+  /** Time on each exercise's teaching steps when the required joints were / were not visible. */
+  trackCoverage(s, p, dt) {
+    if (!s?.exercise || !TEACHING.has(s.type) || this.noCamera || !dt) return;
+    const spec = byId(s.exercise); if (!spec?.required) return;
+    const c = this.results.tracking[s.exercise] ??= { assessedMs: 0, unassessedMs: 0 };
+    const th = CONFIG.minVisibility;
+    const ok = !!p && (s.view === 'front'
+      ? visibilityScore(p, spec.required, null, th) >= 1
+      : Math.max(visibilityScore(p, spec.required, 'L', th), visibilityScore(p, spec.required, 'R', th)) >= 1);
+    if (ok) c.assessedMs += dt; else c.unassessedMs += dt;
+  }
+
+  /** Holds: prescribed seconds, seconds held in position (camera-verified unless no camera), seconds out of position. */
+  recordHold(s, st, ended) {
     this.results.holds.push({ exercise: s.exercise, label: s.label, targetS: s.seconds, heldS: +(st.elapsed / 1000).toFixed(1),
-      lostCount: st.lostCount, partial, stability: st.stab.length ? Math.round(avg(st.stab)) : null });
+      outOfPositionS: +((st.lostMs || 0) / 1000).toFixed(1), lostCount: st.lostCount, ended, partial: ended !== 'complete',
+      verified: !this.noCamera, stability: st.stab.length ? Math.round(avg(st.stab)) : null });
   }
 
   measureSway(s, st, p, t) {
@@ -368,8 +400,10 @@ export class ClassRunner {
 
   skip(t = this.lastT) {
     const s = this.step; if (!s || this.done) return;
-    if (s.type === 'gate') this.results.gates.push({ exercise: s.exercise, label: s.label, ms: Math.round(t - this.st.t0), hints: this.st.hints, skipped: true });
-    if (s.type === 'hold') this.recordHold(s, this.st, true);
+    if (s.type === 'gate') this.results.gates.push({ exercise: s.exercise, label: s.label, ms: Math.round(t - this.st.t0), hints: this.st.hints, skipped: true, reason: 'skipped_by_user' });
+    if (s.type === 'hold') this.recordHold(s, this.st, 'skipped_by_user');
+    if (s.type === 'reps') { if (!this.st.started) this.st.started = true; this.recordReps(s, this.st, 'skipped_by_user'); }
+    if (s.type === 'teachRep') this.results.gates.push({ exercise: s.exercise, label: 'Guided rep', ms: Math.round(t - this.st.t0), hints: 0, skipped: true, reason: 'skipped_by_user' });
     this.next(t);
   }
   pause() { if (this.paused) return; this.paused = true; this.io.stopSpeaking?.(); this.say(L.paused, 'info'); this.io.onChange?.(); }

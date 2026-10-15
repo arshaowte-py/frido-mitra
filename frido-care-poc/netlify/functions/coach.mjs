@@ -22,8 +22,8 @@ Limits:
 - Also end with [ESCALATE] when the physio should see the question.`;
 
 const fallbackText = lang => (lang === 'hi'
-  ? 'मैंने आपका सवाल आपके फ़िज़ियो के लिए सेव कर लिया है।'
-  : "I've saved your question for your physio.");
+  ? 'मैंने आपका सवाल आपके सेशन रिकॉर्ड में जोड़ दिया है ताकि आपके फ़िज़ियो देख सकें।'
+  : "I've added your question to your session record for your physio to see.");
 
 export default async (req) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 });

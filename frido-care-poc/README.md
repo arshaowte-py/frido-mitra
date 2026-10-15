@@ -83,6 +83,15 @@ The on-device answers work everywhere. AI answers need the Netlify Function in `
 2. In Netlify → Site configuration → Environment variables, add `ANTHROPIC_API_KEY`.
 3. The function calls Claude (`claude-opus-5-5`, low effort, server-side refusal fallback enabled). It receives only the question and the live session numbers, never camera images. Without a key, questions are saved for the physio instead.
 
+## Trial records
+
+For the controlled feasibility trial (see `docs/TRIAL_READINESS.md` for status against the trial brief):
+
+- **Consent first:** before the first session the participant enters their participant code (e.g. `FC-T07`) and chooses whether results are saved. Without consent, nothing is stored.
+- **Honest summaries:** every record separates prescribed, camera-counted, not-counted and unassessed reps; hold seconds held vs out of position; and how much of the time the camera could actually see the required joints. Steps the camera couldn't confirm are announced ("this step won't be scored") and counted as not checked.
+- **Getting records off the phone:** Physio view → **Share records** (JSON via the phone's share sheet, e.g. WhatsApp to the physio) or **Download CSV**. Nothing is sent automatically, and the app never claims it notified a physio.
+- **Record format:** `docs/SESSION_SUMMARY.md`, with stable ids (`participantId`, `sessionId`, `exerciseId`, `specVersion`) for later integration with the main Frido Care app.
+
 ## Design
 
 Follows the Frido Brand Book (2024), applied lightly:

@@ -396,6 +396,13 @@ kbd { font: 500 .78rem var(--font); border: 1px solid var(--line); border-bottom
   .class-banner .btn { width: 100%; }
 }
 
+/* ---------- trial records ---------- */
+.field { display: grid; gap: 6px; font-weight: 500; }
+.field input { font: inherit; font-weight: 400; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.consent-box { display: grid; gap: 8px; background: var(--surface-2); border-radius: 14px 4px 4px 4px; padding: 14px 16px; font-size: .92rem; }
+.export-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn[disabled] { opacity: .4; pointer-events: none; }
+
 /* ---------- responsive ---------- */
 @media (max-width: 960px) {
   .ex-grid { grid-template-columns: 1fr; }

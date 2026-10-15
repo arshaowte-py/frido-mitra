@@ -6,6 +6,7 @@ import { askCoach } from './coach.js';
 import { byId, CUES, FAULTS } from './exercises.js';
 import { MEDIA, embedUrl } from './media.js';
 import { BONES, IDX } from './engine.js';
+import { classRecords, uuid } from './records.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const ANSWER_LABEL = { yes: { en: 'Yes', hi: 'हाँ' }, no: { en: 'No', hi: 'नहीं' }, pain: { en: 'Pain', hi: 'दर्द' } };
@@ -136,12 +137,13 @@ class ClassController {
 
   /** Once-a-day red-flag questions (brief §5.2). Pain is asked by the coach inside the class. */
   precheck(next) {
-    const { store, today, modal, closeModal, saveSession } = this.ctx;
+    const { store, today, modal, closeModal, saveSession, records } = this.ctx;
+    if (!records.trial()) return this.ctx.ensureConsent(() => this.precheck(next));
     // unlock speech on this user gesture
     if (window.speechSynthesis) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; window.speechSynthesis.speak(u); }
     if (store.get('fc_checkin_v1', {}).date === today()) return next();
     const flags = [['numb', 'New numbness or tingling'], ['sharp', 'Sharp or shooting pain'], ['swell', 'New swelling'], ['fall', 'A fall since your last session'], ['chest', 'Chest pain or breathlessness']];
-    const m = modal(`<h2>Before you start</h2><p class="muted">Once a day. Your physio sees these answers.</p>
+    const m = modal(`<h2>Before you start</h2><p class="muted">Once a day. ${records.canSave() ? 'Saved in your session record for your physio.' : 'Not saved.'}</p>
       <fieldset><legend>Since your last session, have you had…</legend>
       ${flags.map(([k, t]) => `<div class="yn"><span>${t}</span><span class="seg"><button type="button" data-f="${k}" data-v="0" aria-pressed="true">No</button><button type="button" data-f="${k}" data-v="1" aria-pressed="false">Yes</button></span></div>`).join('')}
       </fieldset><div class="modal-actions"><button class="btn" id="mGo">Continue</button></div>`);
@@ -151,7 +153,7 @@ class ClassController {
       const red = Object.entries(ans).filter(([, v]) => v).map(([k]) => k);
       if (red.length) {
         saveSession({ id: crypto.randomUUID?.() || String(Date.now()), type: 'red_flag', flags: red, at: Date.now(), exercise: this.cls.id, title: this.cls.title.en });
-        m.innerHTML = `<h2>Please contact your physio before continuing</h2><p>You answered yes to: ${red.map(k => flags.find(f => f[0] === k)[1].toLowerCase()).join(', ')}. We've let your physio know.</p><div class="modal-actions"><button class="btn" id="mClose">OK</button></div>`;
+        m.innerHTML = `<h2>Please contact your physio before continuing</h2><p>You answered yes to: ${red.map(k => flags.find(f => f[0] === k)[1].toLowerCase()).join(', ')}. Please call or message your physio now. The app does not contact your physio by itself.</p><div class="modal-actions"><button class="btn" id="mClose">OK</button></div>`;
         $('#mClose', m).onclick = () => { closeModal(); location.hash = '#/'; };
         return;
       }
@@ -219,7 +221,7 @@ class ClassController {
       onDone: res => setTimeout(() => this.finish(res), 600),
       onChange: () => this.ui(true),
     }, { noCamera });
-    this.startedAt = Date.now();
+    this.startedAt = Date.now(); this.sessionId = uuid(); this.steps = steps;
     this.runner.start(performance.now());
     this.running = true;
     if (noCamera) this.timer = setInterval(() => { this.runner.tick(null, null, performance.now()); this.ui(); }, 100);
@@ -427,7 +429,7 @@ class ClassController {
   renderLog() {
     const { esc } = this.ctx;
     $('#coachLog', this.root).innerHTML = this.log.slice(0, 4).map(e => `<li><p class="q">${esc(e.q)}</p><p class="a">${esc(e.a)}</p>
-      <p class="log-src">${e.source === 'ai' ? 'AI coach' : e.source === 'on-device' ? 'Coach (on device)' : 'Saved for your physio'}${e.flagged ? ' · physio notified' : ''}</p></li>`).join('');
+      <p class="log-src">${e.source === 'ai' ? 'AI coach' : e.source === 'on-device' ? 'Coach (on device)' : 'Saved for your physio'}${e.flagged ? ' · flagged for your physio' : ''}</p></li>`).join('');
   }
 
   /** Live context for the coach: numbers and text only. */
@@ -482,6 +484,7 @@ class ClassController {
         avgQ: q.length ? Math.round(q.reduce((a, b) => a + b, 0) / q.length) : stab.length ? Math.round(stab.reduce((a, b) => a + b, 0) / stab.length) : null };
     });
     const minutes = Math.max(1, Math.round((Date.now() - this.startedAt) / 60000));
+    const saved = this.ctx.records.canSave();
     const m = modal(`<p class="eyebrow">Class complete · ${minutes} min</p><h2>${esc(this.cls.title.en)}</h2>
       <div class="stats">
         <div><span class="k">Pain before</span><span class="v">${res.painPre ?? '–'}</span></div>
@@ -492,18 +495,14 @@ class ClassController {
       <ul class="cls-sum">${rows.map(r => `<li><b>${esc(r.e.title.en)}</b>
         <span>${r.holds.length ? `${r.done}/${r.target} holds · avg ${(r.holds.reduce((a, h) => a + h.heldS, 0) / r.holds.length).toFixed(0)} s` : `${r.done}/${r.target} reps`}${r.avgQ != null ? ` · ${r.stab.length && !r.q.length ? 'steadiness' : 'form'} ${r.avgQ}` : ''}${r.checkin.length ? ` · stretch felt: ${r.checkin.join(', ')}` : ''}</span>
         ${Object.keys(r.faults).length ? `<span class="muted small">Work on: ${Object.entries(r.faults).map(([k, n]) => `${FAULTS[k]?.label || k} (${n})`).join(', ')}</span>` : ''}</li>`).join('')}</ul>
-      <div class="modal-actions"><a class="btn ghost" href="#/" id="mHome">Save &amp; finish</a><a class="btn" href="#/physio" id="mPhys">Save &amp; see physio view</a></div>`);
+      ${saved ? '' : '<p class="muted small">Results are not saved: you chose not to save results on this device.</p>'}
+      <div class="modal-actions"><a class="btn ghost" href="#/" id="mHome">${saved ? 'Save &amp; finish' : 'Finish'}</a><a class="btn" href="#/physio" id="mPhys">${saved ? 'Save &amp; see physio view' : 'Physio view'}</a></div>`);
     const save = () => {
-      for (const r of rows) {
-        const faults = Object.entries(r.faults).map(([k, n]) => ({ key: k, n, of: r.q.length, label: FAULTS[k]?.label || k }));
-        if (r.checkin.includes('pain')) faults.unshift({ key: 'pain_during', n: 1, of: 1, label: 'Reported pain during the stretch' });
-        saveSession({ id: crypto.randomUUID?.() || `${Date.now()}${r.e.id}`, type: 'session', exercise: r.e.id, title: r.e.title.en, plan: `${this.cls.title.en} (guided)`,
-          mode: this.noCamera ? 'guided class' : 'guided class · camera', reps: r.done, target: r.target, completion: r.target ? r.done / r.target : 1,
-          avgQuality: r.avgQ, faults, painPre: res.painPre, painPost: res.painPost, at: Date.now() });
-      }
-      if (res.questions.length) {
+      const mode = this.noCamera ? 'no_camera' : this.isCam ? 'camera' : 'video_file';
+      for (const rec of classRecords(this.ctx.records, { cls: this.cls, items: this.items, steps: this.steps, dose: this.dose, mode, results: res, sessionId: this.sessionId })) saveSession(rec);
+      if (saved && res.questions.length) {
         const qs = store.get('fc_questions_v1', []);
-        store.set('fc_questions_v1', [...res.questions.map(q => ({ ...q, class: this.cls.title.en })), ...qs].slice(0, 100));
+        store.set('fc_questions_v1', [...res.questions.map(q => ({ ...q, class: this.cls.title.en, sessionId: this.sessionId, participantId: this.ctx.records.trial()?.participantId || null })), ...qs].slice(0, 200));
       }
       this.ctx.closeModal();
     };

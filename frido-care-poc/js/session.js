@@ -336,6 +336,7 @@ export class Session {
     return {
       exercise: this.spec.id, title: this.spec.title.en, mode: this.guided ? 'guided' : 'tracked',
       reps: reps.length, target, completion: Math.min(1, reps.length / target), avgQuality: avgQ,
+      notCounted: Object.values(this.trackers).reduce((a, tk) => a + (tk.partials || 0), 0),
       bestValue: Number.isFinite(peak) ? peak : null, avgHoldS: holds.length ? +(holds.reduce((a, b) => a + b, 0) / holds.length / 1000).toFixed(1) : null,
       faults: Object.entries(faultCounts).sort((a, b) => b[1] - a[1]).map(([k, n]) => ({ key: k, n, of: scored.length, label: FAULTS[k]?.label || k })),
       reps_detail: scored.map(r => ({ n: r.n, side: r.side, set: r.set, q: r.quality, f: r.failed })),

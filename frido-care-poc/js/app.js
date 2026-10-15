@@ -5,6 +5,7 @@ import { CONFIG } from './config.js';
 import { BONES, IDX } from './engine.js';
 import { MEDIA, thumbUrl, embedUrl, watchUrl } from './media.js';
 import { CLASSES } from './lessons.js';
+import { createRecords, exerciseRecord, toCSV, shareOrDownload, SCHEMA, CONSENT_VERSION } from './records.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -18,7 +19,32 @@ const store = {
 const prefs = Object.assign({ lang: 'en', voice: true, stick: false, model: 'auto', facing: 'user' }, store.get('fc_prefs_v1', {}));
 const savePrefs = () => store.set('fc_prefs_v1', prefs);
 const sessionsDb = () => store.get('fc_sessions_v1', []);
-const saveSession = s => { const all = sessionsDb(); all.unshift(s); store.set('fc_sessions_v1', all.slice(0, 200)); };
+const records = createRecords(store);
+/** Saves only with trial consent. Returns whether the record was saved. */
+const saveSession = s => {
+  if (!records.canSave()) return false;
+  const all = sessionsDb(); all.unshift({ participantId: records.trial()?.participantId || null, deviceId: records.deviceId(), ...s });
+  store.set('fc_sessions_v1', all.slice(0, 500));
+  return true;
+};
+
+/** Trial consent + participant code, asked once per device before the first session. */
+function ensureConsent(next) {
+  if (records.trial()) return next();
+  const m = modal(`<p class="eyebrow">Frido Care exercise trial</p><h2>Before your first session</h2>
+    <label class="field" for="pidIn"><span>Participant code from your physio <span class="muted">(optional)</span></span>
+      <input id="pidIn" type="text" placeholder="e.g. FC-T07" autocomplete="off" maxlength="20"></label>
+    <div class="consent-box">
+      <p><b>What is saved:</b> your exercise results as numbers (reps, hold times, form scores, pain ratings, your answers and the questions you ask the coach). Never video or photos.</p>
+      <p><b>Where:</b> on this phone only. Nothing is sent automatically. Your physio sees your results when you share the export file with them (Physio view → Share records).</p>
+      <p><b>Your choice:</b> you can exercise without saving, and you can delete saved results at any time in the Physio view.</p>
+    </div>
+    <div class="modal-actions"><button class="btn ghost" id="cNo">Continue without saving</button><button class="btn" id="cYes">I agree, save my results</button></div>
+    <p class="muted small">Consent version ${CONSENT_VERSION}. Proof of concept: wording to be reviewed by Frido's legal team.</p>`);
+  const done = consent => { records.setTrial({ participantId: $('#pidIn', m).value, consent }); closeModal(); next(); };
+  $('#cYes', m).onclick = () => done(true);
+  $('#cNo', m).onclick = () => done(false);
+}
 const today = () => new Date().toISOString().slice(0, 10);
 
 // ---------------- voice ----------------
@@ -77,7 +103,7 @@ function renderClassRoute(id) {
   app.innerHTML = '<p class="muted">Loading class…</p>';
   import('./class-ui.js').then(m => {
     if (!location.hash.startsWith(`#/class/${id}`)) return;
-    active = m.renderClass(app, id, { prefs, savePrefs, esc, modal, closeModal, saveSession, store, today });
+    active = m.renderClass(app, id, { prefs, savePrefs, esc, modal, closeModal, saveSession, store, today, records, ensureConsent });
   });
 }
 
@@ -100,7 +126,7 @@ function renderHome(filter) {
     <div class="hero-copy">
       <p class="eyebrow">Frido Care · Exercise Coach</p>
       <h1>Your home exercises, <span class="lt">done right.</span></h1>
-      <p class="lede">Your Frido physio prescribes the plan. Prop up your phone and move: the coach counts reps, measures depth, stretch and hold time, and gives short voice cues in English or Hindi. Your physio sees how it went.</p>
+      <p class="lede">Your Frido physio prescribes the plan. Prop up your phone and move: the coach counts reps, measures depth, stretch and hold time, and gives short voice cues in English or Hindi. You share the results with your physio.</p>
       <ul class="facts">
         <li><b>${tracked}</b> camera-tracked exercises</li>
         <li><b>${EXERCISES.length - tracked}</b> guided with voice timer</li>
@@ -304,13 +330,14 @@ class ExerciseController {
 
   // ----- pre-session check (pain + red flags, brief §5.2) -----
   precheck(next) {
+    if (!records.trial()) return ensureConsent(() => this.precheck(next));
     // unlock speech on a user gesture
     if (synth) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; synth.speak(u); }
     if (store.get('fc_checkin_v1', {}).date === today()) { this.painPre = store.get('fc_checkin_v1', {}).pain; return next(); }
     const flags = [['numb', 'New numbness or tingling'], ['sharp', 'Sharp or shooting pain'], ['swell', 'New swelling'], ['fall', 'A fall since your last session'], ['chest', 'Chest pain or breathlessness']];
     const m = modal(`
       <h2>Before you start</h2>
-      <p class="muted">Once a day. Your physio sees these answers.</p>
+      <p class="muted">Once a day. ${records.canSave() ? 'Saved in your session record for your physio.' : 'Not saved.'}</p>
       <fieldset class="pain"><legend>How much pain do you have right now?</legend>
         <div class="scale">${painButtons('pre')}</div>
         <div class="scale-ends"><span>0 · No pain</span><span>10 · Worst pain</span></div></fieldset>
@@ -325,7 +352,7 @@ class ExerciseController {
       const red = Object.entries(ans).filter(([, v]) => v).map(([k]) => k);
       if (red.length) {
         saveSession({ id: crypto.randomUUID?.() || String(Date.now()), type: 'red_flag', flags: red, painPre: pain, at: Date.now(), exercise: this.ex.id, title: this.ex.title.en });
-        m.innerHTML = `<h2>Please contact your physio before continuing</h2><p>You answered yes to: ${red.map(k => flags.find(f => f[0] === k)[1].toLowerCase()).join(', ')}. We've let your physio know.</p>
+        m.innerHTML = `<h2>Please contact your physio before continuing</h2><p>You answered yes to: ${red.map(k => flags.find(f => f[0] === k)[1].toLowerCase()).join(', ')}. Please call or message your physio now. This answer is ${records.canSave() ? 'saved in your session record' : 'not saved, because you chose not to save results'}; the app does not contact your physio by itself.</p>
           <div class="modal-actions"><button class="btn" id="mClose">OK</button></div>`;
         $('#mClose', m).onclick = () => { closeModal(); location.hash = '#/'; };
         return;
@@ -606,13 +633,14 @@ class ExerciseController {
       <fieldset class="pain"><legend>How hard was it?</legend><div class="scale">${[0, 2, 4, 6, 8, 10].map(v => `<button type="button" data-eff="${v}" aria-pressed="false">${v}</button>`).join('')}</div>
         <div class="scale-ends"><span>Very easy</span><span>Maximum effort</span></div></fieldset>
       <div class="modal-actions">
-        <a class="btn ghost" href="#/physio" id="mPhys">Save &amp; see physio view</a>
+        <a class="btn ghost" href="#/physio" id="mPhys">${records.canSave() ? 'Save &amp; see physio view' : 'Physio view (not saved)'}</a>
         ${nextIdx != null ? `<a class="btn" id="mNext" href="#/ex/${pl.items[nextIdx]}/plan/${pl.id}/${nextIdx}">Save &amp; next: ${esc(byId(pl.items[nextIdx]).title.en)}</a>` : `<a class="btn" id="mHome" href="#/">Save &amp; finish</a>`}
       </div>`);
     let painPost = null, effort = null;
     m.querySelectorAll('[data-pain]').forEach(b => b.onclick = () => { painPost = +b.dataset.pain; m.querySelectorAll('[data-pain]').forEach(x => x.setAttribute('aria-pressed', x === b)); });
     m.querySelectorAll('[data-eff]').forEach(b => b.onclick = () => { effort = +b.dataset.eff; m.querySelectorAll('[data-eff]').forEach(x => x.setAttribute('aria-pressed', x === b)); });
-    const save = () => { saveSession({ id: crypto.randomUUID?.() || String(Date.now()), type: 'session', ...sm, painPre: this.painPre ?? null, painPost, effort, at: Date.now(), plan: pl?.en || null }); closeModal(); };
+    const mode = this.session.guided ? 'no_camera' : this.isCam ? 'camera' : 'video_file';
+    const save = () => { saveSession(exerciseRecord(records, { ex, sm, mode, painPre: this.painPre, painPost, effort, plan: pl?.en })); closeModal(); };
     m.querySelectorAll('.modal-actions a').forEach(a => a.addEventListener('click', save));
   }
 }
@@ -672,8 +700,13 @@ function renderPhysio() {
   const reds = week.filter(s => light(s) === 'red');
   app.innerHTML = `
   <section class="block physio">
-    <div class="block-head"><p class="eyebrow">Physio view · demo patient</p><h1>Patient progress</h1>
-      <p class="muted">What the partner physio sees after the patient exercises at home. Data on this demo stays in this browser.</p></div>
+    <div class="block-head"><p class="eyebrow">Physio view · ${esc(trialLine())}</p><h1>Patient progress</h1>
+      <p class="muted">What the partner physio sees after the patient exercises at home. Records are kept on this device; share the export with the physio.</p></div>
+    <div class="export-row">
+      <button class="btn" id="exShare" type="button" ${all.length ? '' : 'disabled'}>Share records</button>
+      <button class="btn ghost" id="exCsv" type="button" ${all.length ? '' : 'disabled'}>Download CSV</button>
+      <button class="linkbtn" id="trialReset" type="button">Change participant / consent</button>
+    </div>
     <div class="kpis">
       <div class="kpi"><span class="k">Frido Move Score</span><span class="v">${move ?? '–'}</span><span class="s">50% adherence · 35% form · 15% pain trend</span></div>
       <div class="kpi"><span class="k">Active days (7 d)</span><span class="v">${days}<small>/7</small></span><span class="s">${sess.length} exercise sessions</span></div>
@@ -681,11 +714,11 @@ function renderPhysio() {
       <div class="kpi ${reds.length ? 'alert' : ''}"><span class="k">Alerts</span><span class="v">${reds.length}</span><span class="s">Red flags or pain above ceiling (${CONFIG.painCeiling})</span></div>
     </div>
     ${all.length ? `<div class="tbl"><table>
-      <thead><tr><th>When</th><th>Exercise</th><th>Mode</th><th>Reps</th><th>Form</th><th>Pain before → after</th><th>Flags</th><th>Suggestion</th></tr></thead>
+      <thead><tr><th>When</th><th>Exercise</th><th>Mode</th><th>Done / prescribed</th><th>Form</th><th>Pain before → after</th><th>Flags</th><th>Suggestion</th></tr></thead>
       <tbody>${all.map(s => {
         const l = light(s);
         if (s.type === 'red_flag') return `<tr><td>${fmtTime(s.at)}</td><td>${esc(s.title)}</td><td>–</td><td>–</td><td>–</td><td>${s.painPre ?? '–'}</td><td>Red-flag answer: ${s.flags.join(', ')}</td><td><span class="tl red">Contact patient</span></td></tr>`;
-        return `<tr><td>${fmtTime(s.at)}</td><td>${esc(s.title)}${s.plan ? `<br><span class="muted small">${esc(s.plan)}</span>` : ''}</td><td>${s.mode}</td><td>${s.reps}/${s.target}</td>
+        return `<tr><td>${fmtTime(s.at)}</td><td>${esc(s.title)}${s.plan ? `<br><span class="muted small">${esc(s.plan)}</span>` : ''}</td><td>${esc(s.modeLabel || s.mode)}</td><td>${repsCell(s)}</td>
           <td>${s.avgQuality != null ? `<span class="avgq ${qClass(s.avgQuality)}">${s.avgQuality}</span>` : '–'}</td>
           <td>${s.painPre ?? '–'} → ${s.painPost ?? '–'}</td>
           <td>${s.faults?.length ? s.faults.slice(0, 2).map(f => `${esc(f.label)} (${f.n}/${f.of})`).join('<br>') : '–'}</td>
@@ -697,7 +730,36 @@ function renderPhysio() {
     <p class="muted small">Suggestions follow the traffic-light rules in the brief and only go to the physio for approval; the patient's plan never changes on its own.</p>
   </section>`;
   $('#clearD')?.addEventListener('click', () => { store.set('fc_sessions_v1', []); store.set('fc_checkin_v1', {}); store.set('fc_questions_v1', []); renderPhysio(); });
+  const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+  const pid = records.trial()?.participantId || 'no-code';
+  $('#exShare')?.addEventListener('click', () => shareOrDownload(`frido-care-${pid}-${stamp}.json`, JSON.stringify({
+    schema: SCHEMA, exportedAt: new Date().toISOString(), participantId: records.trial()?.participantId || null, deviceId: records.deviceId(),
+    consent: records.trial(), sessions: sessionsDb(), questions: store.get('fc_questions_v1', []) }, null, 2), 'application/json'));
+  $('#exCsv')?.addEventListener('click', () => shareOrDownload(`frido-care-${pid}-${stamp}.csv`, toCSV(sessionsDb()), 'text/csv'));
+  $('#trialReset')?.addEventListener('click', () => { records.resetTrial(); ensureConsent(renderPhysio); });
 }
+function trialLine() {
+  const t = records.trial();
+  if (!t) return 'no trial consent yet';
+  if (!t.consent) return 'not saving (no consent)';
+  return `participant ${t.participantId || 'without code'} · consent ${new Date(t.at).toLocaleDateString('en-IN')}`;
+}
+/** Prescribed vs camera-counted vs not counted vs unassessed (trial brief §4). */
+function repsCell(s) {
+  if (s.schema !== SCHEMA) return `${s.reps}/${s.target}`;
+  if (s.reps) {
+    const r = s.reps;
+    if (r.cameraCounted == null) return `${r.selfPaced ?? 0}/${r.prescribed} reps<br><span class="muted small">self-paced, not camera-assessed</span>`;
+    const extra = [r.notCounted ? `${r.notCounted} not counted` : '', r.unassessed ? `${r.unassessed} unassessed` : ''].filter(Boolean).join(' · ');
+    return `${r.cameraCounted}/${r.prescribed} reps (camera)${extra ? `<br><span class="muted small">${extra}</span>` : ''}${s.trackingCoverage != null ? `<br><span class="muted small">tracked ${Math.round(s.trackingCoverage * 100)}% of the time</span>` : ''}`;
+  }
+  if (s.holds) {
+    const h = s.holds;
+    return `${h.completed}/${h.prescribed} holds${h.heldSeconds != null ? ` · ${h.heldSeconds}/${h.prescribedSeconds} s` : ''}${h.verified ? '' : '<br><span class="muted small">timer only, not camera-assessed</span>'}${h.outOfPositionSeconds ? `<br><span class="muted small">${h.outOfPositionSeconds} s out of position</span>` : ''}${s.trackingCoverage != null ? `<br><span class="muted small">tracked ${Math.round(s.trackingCoverage * 100)}% of the time</span>` : ''}`;
+  }
+  return '–';
+}
+
 function questionsBlock() {
   const qs = store.get('fc_questions_v1', []);
   if (!qs.length) return '';
